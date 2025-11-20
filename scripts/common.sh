@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Common helper functions for Orion Sentinel installer scripts
+
+# Color codes for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly NC='\033[0m' # No Color
+
+# Print a formatted header
+print_header() {
+    local message="$1"
+    echo ""
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}  ${message}${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    echo ""
+}
+
+# Print info message
+print_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+# Print warning message
+print_warning() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+# Print error message
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Install Docker CE and compose plugin if not already installed
+install_docker() {
+    print_header "Checking Docker Installation"
+    
+    if command -v docker &> /dev/null; then
+        print_info "Docker is already installed (version: $(docker --version))"
+        
+        # Check if docker compose plugin is available
+        if docker compose version &> /dev/null; then
+            print_info "Docker Compose plugin is already installed (version: $(docker compose version))"
+            return 0
+        else
+            print_warning "Docker Compose plugin not found, will install it"
+        fi
+    else
+        print_info "Docker not found, installing Docker CE..."
+    fi
+    
+    # Update package index
+    print_info "Updating package index..."
+    sudo apt-get update -qq
+    
+    # Install prerequisites
+    print_info "Installing prerequisites..."
+    sudo apt-get install -y -qq \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release
+    
+    # Add Docker's official GPG key
+    print_info "Adding Docker's official GPG key..."
+    sudo install -m 0755 -d /etc/apt/keyrings
+    if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
+        curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        sudo chmod a+r /etc/apt/keyrings/docker.gpg
+    fi
+    
+    # Set up the repository
+    print_info "Setting up Docker repository..."
+    echo \
+      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+      $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+      sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    
+    # Update package index again
+    sudo apt-get update -qq
+    
+    # Install Docker Engine and compose plugin
+    print_info "Installing Docker Engine and Compose plugin..."
+    sudo apt-get install -y -qq \
+        docker-ce \
+        docker-ce-cli \
+        containerd.io \
+        docker-buildx-plugin \
+        docker-compose-plugin
+    
+    # Add current user to docker group
+    print_info "Adding current user to docker group..."
+    sudo usermod -aG docker "$USER"
+    
+    print_info "Docker installation complete!"
+    print_warning "You may need to log out and back in for group changes to take effect"
+    print_warning "Or run: newgrp docker"
+    
+    # Verify installation
+    if docker --version && docker compose version; then
+        print_info "Docker and Docker Compose installed successfully!"
+    else
+        print_error "Docker installation verification failed"
+        return 1
+    fi
+}
+
+# Clone a git repository if it doesn't already exist
+# Usage: clone_repo_if_missing <repo_url> <target_dir>
+clone_repo_if_missing() {
+    local repo_url="$1"
+    local target_dir="$2"
+    
+    if [ -d "$target_dir" ]; then
+        print_info "Repository already exists at: $target_dir"
+        print_info "Pulling latest changes..."
+        cd "$target_dir"
+        git pull || print_warning "Could not pull latest changes (you may have local modifications)"
+    else
+        print_info "Cloning repository from: $repo_url"
+        print_info "Target directory: $target_dir"
+        
+        # Create parent directory if it doesn't exist
+        local parent_dir
+        parent_dir="$(dirname "$target_dir")"
+        mkdir -p "$parent_dir"
+        
+        # Clone the repository
+        git clone "$repo_url" "$target_dir"
+        
+        if [ $? -eq 0 ]; then
+            print_info "Repository cloned successfully!"
+        else
+            print_error "Failed to clone repository"
+            return 1
+        fi
+    fi
+}
+
+# Get the local IP address
+get_local_ip() {
+    # Try to get IP from hostname command
+    hostname -I | awk '{print $1}'
+}
+
+# Wait for user confirmation
+wait_for_confirmation() {
+    local message="${1:-Press Enter to continue...}"
+    echo ""
+    read -p "$message" -r
+    echo ""
+}
