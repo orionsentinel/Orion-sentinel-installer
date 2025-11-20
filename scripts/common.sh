@@ -130,9 +130,7 @@ clone_repo_if_missing() {
         mkdir -p "$parent_dir"
         
         # Clone the repository
-        git clone "$repo_url" "$target_dir"
-        
-        if [ $? -eq 0 ]; then
+        if git clone "$repo_url" "$target_dir"; then
             print_info "Repository cloned successfully!"
         else
             print_error "Failed to clone repository"
