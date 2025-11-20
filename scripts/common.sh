@@ -69,8 +69,30 @@ install_docker() {
     print_info "Adding Docker's official GPG key..."
     sudo install -m 0755 -d /etc/apt/keyrings
     if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
-        curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-        sudo chmod a+r /etc/apt/keyrings/docker.gpg
+        # Download Docker's GPG key and verify fingerprint
+        # Docker's official GPG key fingerprint: 9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88
+        local temp_gpg="/tmp/docker-gpg.tmp"
+        curl -fsSL https://download.docker.com/linux/debian/gpg -o "$temp_gpg"
+        
+        # Verify the key fingerprint
+        local key_fingerprint
+        key_fingerprint=$(gpg --with-colons --import-options show-only --import < "$temp_gpg" 2>/dev/null | grep fpr | head -1 | cut -d: -f10)
+        
+        # Docker's official key fingerprint (without spaces)
+        local expected_fingerprint="9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
+        
+        if [ "$key_fingerprint" = "$expected_fingerprint" ]; then
+            print_info "GPG key fingerprint verified successfully"
+            sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg < "$temp_gpg"
+            sudo chmod a+r /etc/apt/keyrings/docker.gpg
+            rm "$temp_gpg"
+        else
+            print_error "GPG key fingerprint verification failed!"
+            print_error "Expected: $expected_fingerprint"
+            print_error "Got: $key_fingerprint"
+            rm "$temp_gpg"
+            return 1
+        fi
     fi
     
     # Set up the repository
@@ -114,12 +136,16 @@ install_docker() {
 clone_repo_if_missing() {
     local repo_url="$1"
     local target_dir="$2"
+    local original_dir
+    original_dir="$(pwd)"
     
     if [ -d "$target_dir" ]; then
         print_info "Repository already exists at: $target_dir"
         print_info "Pulling latest changes..."
-        cd "$target_dir"
-        git pull || print_warning "Could not pull latest changes (you may have local modifications)"
+        (
+            cd "$target_dir" || return 1
+            git pull || print_warning "Could not pull latest changes (you may have local modifications)"
+        )
     else
         print_info "Cloning repository from: $repo_url"
         print_info "Target directory: $target_dir"
@@ -137,6 +163,9 @@ clone_repo_if_missing() {
             return 1
         fi
     fi
+    
+    # Return to original directory
+    cd "$original_dir" || return 1
 }
 
 # Get the local IP address
