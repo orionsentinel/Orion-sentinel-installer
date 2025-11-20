@@ -39,11 +39,12 @@ main() {
         exit 1
     fi
     
-    # TODO: The orion-sentinel-nsm-ai repo should have a scripts/install.sh
-    # that handles:
-    # - Setting the NSM interface (prompting user or auto-detecting)
-    # - Starting the NSM stack with docker compose
-    # For now, we'll check if it exists and run it.
+    # NOTE: This installer delegates to the component repository's install script.
+    # The orion-sentinel-nsm-ai repository should provide a scripts/install.sh that:
+    # - Sets the NSM interface (prompting user or auto-detecting)
+    # - Starts the NSM stack with docker compose
+    # If the install script is not present, manual configuration will be required.
+    # See: https://github.com/yorgosroussakis/orion-sentinel-nsm-ai
     
     if [ -f "scripts/install.sh" ]; then
         print_info "Running NSM install script..."

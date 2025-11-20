@@ -178,8 +178,9 @@ clone_repo_if_missing() {
         fi
     fi
     
-    # Return to original directory
-    cd "$original_dir" || return 1
+    # Return to original directory (don't fail the function if this fails)
+    cd "$original_dir" || print_warning "Failed to return to original directory: $original_dir"
+    return 0
 }
 
 # Get the local IP address

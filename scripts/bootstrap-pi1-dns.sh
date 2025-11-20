@@ -39,9 +39,11 @@ main() {
         exit 1
     fi
     
-    # TODO: The orion-sentinel-dns-ha repo should have a scripts/install.sh
+    # NOTE: This installer delegates to the component repository's install script.
+    # The orion-sentinel-dns-ha repository should provide a scripts/install.sh
     # that handles the DNS setup in single-node mode by default.
-    # For now, we'll check if it exists and run it.
+    # If the install script is not present, manual configuration will be required.
+    # See: https://github.com/yorgosroussakis/orion-sentinel-dns-ha
     
     if [ -f "scripts/install.sh" ]; then
         print_info "Running DNS install script..."
