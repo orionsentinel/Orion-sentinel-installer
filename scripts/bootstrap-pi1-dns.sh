@@ -33,7 +33,11 @@ main() {
     # Step 3: Run the DNS install script
     print_header "Running DNS Installation Script"
     
-    cd "$DNS_REPO_DIR"
+    if ! cd "$DNS_REPO_DIR"; then
+        print_error "Failed to change to DNS directory: $DNS_REPO_DIR"
+        print_error "Repository cloning may have failed. Please check the error messages above."
+        exit 1
+    fi
     
     # TODO: The orion-sentinel-dns-ha repo should have a scripts/install.sh
     # that handles the DNS setup in single-node mode by default.

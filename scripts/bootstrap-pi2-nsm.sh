@@ -33,7 +33,11 @@ main() {
     # Step 3: Run the NSM install script
     print_header "Running NSM Installation Script"
     
-    cd "$NSM_REPO_DIR"
+    if ! cd "$NSM_REPO_DIR"; then
+        print_error "Failed to change to NSM directory: $NSM_REPO_DIR"
+        print_error "Repository cloning may have failed. Please check the error messages above."
+        exit 1
+    fi
     
     # TODO: The orion-sentinel-nsm-ai repo should have a scripts/install.sh
     # that handles:

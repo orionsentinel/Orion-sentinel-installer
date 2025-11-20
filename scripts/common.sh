@@ -78,6 +78,13 @@ install_docker() {
         local key_fingerprint
         key_fingerprint=$(gpg --with-colons --import-options show-only --import < "$temp_gpg" 2>/dev/null | grep fpr | head -1 | cut -d: -f10)
         
+        # Check if fingerprint extraction was successful
+        if [ -z "$key_fingerprint" ]; then
+            print_error "Failed to extract GPG key fingerprint"
+            rm "$temp_gpg"
+            return 1
+        fi
+        
         # Docker's official key fingerprint (without spaces)
         local expected_fingerprint="9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
         
@@ -141,11 +148,18 @@ clone_repo_if_missing() {
     
     if [ -d "$target_dir" ]; then
         print_info "Repository already exists at: $target_dir"
-        print_info "Pulling latest changes..."
-        (
-            cd "$target_dir" || return 1
-            git pull || print_warning "Could not pull latest changes (you may have local modifications)"
-        )
+        
+        # Check if it's actually a git repository
+        if [ -d "$target_dir/.git" ] || (cd "$target_dir" && git rev-parse --is-inside-work-tree &>/dev/null); then
+            print_info "Pulling latest changes..."
+            (
+                cd "$target_dir" || return 1
+                git pull || print_warning "Could not pull latest changes (you may have local modifications)"
+            )
+        else
+            print_warning "Directory exists but is not a git repository: $target_dir"
+            print_warning "Skipping git pull. Please verify the directory manually."
+        fi
     else
         print_info "Cloning repository from: $repo_url"
         print_info "Target directory: $target_dir"
