@@ -141,6 +141,54 @@ To change the network interface being monitored:
 
 See the [NSM AI documentation](https://github.com/yorgosroussakis/orion-sentinel-nsm-ai) for details.
 
+### Environment Variable Configuration
+
+You can customize the installation by setting environment variables before running the bootstrap scripts:
+
+**Pi #1 (DNS) Variables:**
+```bash
+# Custom repository URL (e.g., for testing or forks)
+export DNS_REPO_URL="https://github.com/youruser/orion-sentinel-dns-ha.git"
+
+# Custom branch (e.g., for development or testing)
+export DNS_REPO_BRANCH="develop"
+
+# Custom installation directory
+export ORION_BASE_DIR="$HOME/custom-orion"
+
+# Then run the script
+./scripts/bootstrap-pi1-dns.sh
+```
+
+**Pi #2 (NSM) Variables:**
+```bash
+# Custom repository URL
+export NSM_REPO_URL="https://github.com/youruser/orion-sentinel-nsm-ai.git"
+
+# Custom branch
+export NSM_REPO_BRANCH="develop"
+
+# Custom installation directory
+export ORION_BASE_DIR="$HOME/custom-orion"
+
+# Then run the script
+./scripts/bootstrap-pi2-nsm.sh
+```
+
+### Checking System Status
+
+Use the status script to quickly check if Docker containers are running:
+
+```bash
+./scripts/show-status.sh
+```
+
+This displays:
+- Running Docker containers and their status
+- Port mappings
+- Container count summary
+- Docker disk usage
+
 ## Troubleshooting
 
 ### Docker Permission Issues

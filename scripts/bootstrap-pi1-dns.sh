@@ -11,10 +11,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=common.sh
 source "$SCRIPT_DIR/common.sh"
 
-# Configuration
-readonly ORION_BASE_DIR="$HOME/orion"
-readonly DNS_REPO_URL="https://github.com/yorgosroussakis/orion-sentinel-dns-ha.git"
+# Configuration (can be overridden via environment variables)
+readonly ORION_BASE_DIR="${ORION_BASE_DIR:-$HOME/orion}"
+readonly DNS_REPO_URL="${DNS_REPO_URL:-https://github.com/yorgosroussakis/orion-sentinel-dns-ha.git}"
+readonly DNS_REPO_BRANCH="${DNS_REPO_BRANCH:-main}"
 readonly DNS_REPO_DIR="$ORION_BASE_DIR/orion-sentinel-dns-ha"
+
 
 main() {
     print_header "Orion Sentinel - Pi #1 Bootstrap (DNS & Privacy)"
@@ -23,12 +25,16 @@ main() {
     print_info "on this Raspberry Pi."
     echo ""
     
+    # Check required commands
+    require_cmd git
+    require_cmd curl
+    
     # Step 1: Install Docker
     install_docker
     
     # Step 2: Clone the DNS repository
     print_header "Cloning DNS Repository"
-    clone_repo_if_missing "$DNS_REPO_URL" "$DNS_REPO_DIR"
+    clone_repo_if_missing "$DNS_REPO_URL" "$DNS_REPO_DIR" "$DNS_REPO_BRANCH"
     
     # Step 3: Run the DNS install script
     print_header "Running DNS Installation Script"

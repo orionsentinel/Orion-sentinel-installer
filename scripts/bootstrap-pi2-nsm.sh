@@ -11,10 +11,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=common.sh
 source "$SCRIPT_DIR/common.sh"
 
-# Configuration
-readonly ORION_BASE_DIR="$HOME/orion"
-readonly NSM_REPO_URL="https://github.com/yorgosroussakis/orion-sentinel-nsm-ai.git"
+# Configuration (can be overridden via environment variables)
+readonly ORION_BASE_DIR="${ORION_BASE_DIR:-$HOME/orion}"
+readonly NSM_REPO_URL="${NSM_REPO_URL:-https://github.com/yorgosroussakis/orion-sentinel-nsm-ai.git}"
+readonly NSM_REPO_BRANCH="${NSM_REPO_BRANCH:-main}"
 readonly NSM_REPO_DIR="$ORION_BASE_DIR/orion-sentinel-nsm-ai"
+
 
 main() {
     print_header "Orion Sentinel - Pi #2 Bootstrap (Security & Monitoring)"
@@ -23,12 +25,16 @@ main() {
     print_info "on this Raspberry Pi."
     echo ""
     
+    # Check required commands
+    require_cmd git
+    require_cmd curl
+    
     # Step 1: Install Docker
     install_docker
     
     # Step 2: Clone the NSM repository
     print_header "Cloning NSM Repository"
-    clone_repo_if_missing "$NSM_REPO_URL" "$NSM_REPO_DIR"
+    clone_repo_if_missing "$NSM_REPO_URL" "$NSM_REPO_DIR" "$NSM_REPO_BRANCH"
     
     # Step 3: Run the NSM install script
     print_header "Running NSM Installation Script"

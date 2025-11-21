@@ -35,6 +35,15 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Check if a required command exists
+# Usage: require_cmd <command_name>
+require_cmd() {
+    if ! command -v "$1" &>/dev/null 2>&1; then
+        print_error "Required command '$1' not found. Please install it and retry."
+        exit 1
+    fi
+}
+
 # Install Docker CE and compose plugin if not already installed
 install_docker() {
     print_header "Checking Docker Installation"
@@ -139,10 +148,11 @@ install_docker() {
 }
 
 # Clone a git repository if it doesn't already exist
-# Usage: clone_repo_if_missing <repo_url> <target_dir>
+# Usage: clone_repo_if_missing <repo_url> <target_dir> [branch]
 clone_repo_if_missing() {
     local repo_url="$1"
     local target_dir="$2"
+    local branch="${3:-}"
     local original_dir
     original_dir="$(pwd)"
     
@@ -162,6 +172,9 @@ clone_repo_if_missing() {
         fi
     else
         print_info "Cloning repository from: $repo_url"
+        if [ -n "$branch" ]; then
+            print_info "Branch: $branch"
+        fi
         print_info "Target directory: $target_dir"
         
         # Create parent directory if it doesn't exist
@@ -170,7 +183,12 @@ clone_repo_if_missing() {
         mkdir -p "$parent_dir"
         
         # Clone the repository
-        if git clone "$repo_url" "$target_dir"; then
+        local clone_cmd="git clone"
+        if [ -n "$branch" ]; then
+            clone_cmd="$clone_cmd --branch $branch"
+        fi
+        
+        if $clone_cmd "$repo_url" "$target_dir"; then
             print_info "Repository cloned successfully!"
         else
             print_error "Failed to clone repository"
