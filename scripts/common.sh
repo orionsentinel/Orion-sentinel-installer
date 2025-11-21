@@ -99,7 +99,7 @@ install_docker() {
         
         if [ "$key_fingerprint" = "$expected_fingerprint" ]; then
             print_info "GPG key fingerprint verified successfully"
-            sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg < "$temp_gpg"
+            cat "$temp_gpg" | sudo gpg --dearmor | sudo tee /etc/apt/keyrings/docker.gpg > /dev/null
             sudo chmod a+r /etc/apt/keyrings/docker.gpg
             rm "$temp_gpg"
         else
