@@ -1,463 +1,434 @@
-# Getting Started with Orion Sentinel on Three Nodes
+# Getting Started with Orion Sentinel - Three-Node Architecture
 
-This guide explains how to deploy the complete Orion Sentinel stack across three nodes: a Dell server (CoreSrv) and two Raspberry Pis.
+This guide walks you through deploying Orion Sentinel in a three-node architecture with a central Single Pane of Glass (SPoG) on CoreSrv.
 
 ## Architecture Overview
 
-The three-node Orion Sentinel deployment uses a **Single Pane of Glass (SPoG)** architecture:
+The three-node Orion Sentinel deployment consists of:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      Your Home Network                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │          CoreSrv (Dell) - Single Pane of Glass           │  │
-│  ├──────────────────────────────────────────────────────────┤  │
-│  │  • Traefik (reverse proxy)                               │  │
-│  │  • Authelia (authentication)                             │  │
-│  │  • Prometheus (metrics aggregation)                      │  │
-│  │  • Loki (log aggregation)          ┌──────────┐          │  │
-│  │  • Grafana (visualization)         │  SPoG    │          │  │
-│  │  • Cloud services                  │ (Central)│          │  │
-│  └────────────────────────────────────┴──────────┴──────────┘  │
-│                     ▲              ▲                             │
-│                     │              │                             │
-│            Logs & Metrics    Logs & Metrics                     │
-│                     │              │                             │
-│  ┌──────────────────┴──┐    ┌─────┴──────────────┐             │
-│  │  Pi #1 (DNS)        │    │  Pi #2 (NetSec)    │             │
-│  ├─────────────────────┤    ├────────────────────┤             │
-│  │ • Pi-hole           │    │ • Suricata IDS     │             │
-│  │ • Unbound DNS       │    │ • AI Detection     │             │
-│  │ • Keepalived (HA)   │    │ • Threat Intel     │             │
-│  │ • Promtail Agent    │    │ • Promtail Agent   │             │
-│  └─────────────────────┘    └────────────────────┘             │
-│           ↑                           ↑                         │
-│      DNS Queries              Network Mirror Port               │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    Orion Sentinel Architecture               │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌─────────────────┐      ┌─────────────────┐              │
+│  │   Pi #1 (DNS)   │      │ Pi #2 (NetSec)  │              │
+│  ├─────────────────┤      ├─────────────────┤              │
+│  │ • Pi-hole       │      │ • Suricata IDS  │              │
+│  │ • Unbound       │      │ • AI Detection  │              │
+│  │ • Promtail ────┐│      │ • Promtail ────┐│              │
+│  └─────────────────┘│      └─────────────────┘│              │
+│           │         │               │         │              │
+│           │ Logs    │               │ Logs    │              │
+│           ▼         │               ▼         │              │
+│  ┌──────────────────┴───────────────┴──────────────────┐    │
+│  │           CoreSrv (Dell Server - SPoG)              │    │
+│  ├─────────────────────────────────────────────────────┤    │
+│  │ • Traefik (Reverse Proxy + SSL)                     │    │
+│  │ • Authelia (Authentication)                          │    │
+│  │ • Loki (Centralized Log Aggregation)                │    │
+│  │ • Grafana (Visualization)                           │    │
+│  │ • Prometheus (Metrics Collection)                   │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Key Principles
 
-1. **CoreSrv is the SPoG**: All monitoring, logging, and visualization happens on CoreSrv
-2. **Pis push data to CoreSrv**: Promtail agents on both Pis forward logs to Loki on CoreSrv
-3. **No SSH scraping**: CoreSrv never scrapes Pis via SSH; all data is pushed from Pis
-4. **Centralized configuration**: Environment files and secrets managed on each node
+1. **CoreSrv** is the central Single Pane of Glass (SPoG)
+   - All monitoring, logging, and visualization happens here
+   - Runs Loki to collect logs from both Pis
+   - Runs Grafana for visualization
+   - Runs Prometheus for metrics (optional)
+   - Runs Traefik for reverse proxy and SSL termination
+
+2. **Pi #1** is dedicated to DNS
+   - Runs Pi-hole for ad-blocking
+   - Runs Unbound for recursive DNS
+   - Runs Promtail to send logs to CoreSrv Loki
+   - Does NOT run local Grafana/Loki
+
+3. **Pi #2** is dedicated to Network Security
+   - Runs Suricata for IDS/IPS
+   - Runs AI-powered threat detection
+   - Configured in SPoG mode: `LOCAL_OBSERVABILITY=false`
+   - Sends all logs to CoreSrv via `LOKI_URL`
 
 ## Prerequisites
 
 ### Hardware
 
-- **1× Dell Server or PC** (CoreSrv)
-  - 8GB+ RAM recommended
-  - 100GB+ storage
-  - Linux (Debian/Ubuntu recommended)
-  
-- **2× Raspberry Pi 4 or 5** (4GB+ RAM recommended)
-  - Pi #1: DNS HA node
-  - Pi #2: NetSec node with network monitoring capability
+- **1× Dell Server** or similar x86 machine for CoreSrv (16GB+ RAM recommended)
+- **2× Raspberry Pi 5** (8GB RAM recommended)
+- **Network switch** with port mirroring capability (for Pi #2)
+- **Static IP addresses** or DHCP reservations for all three nodes
 
 ### Software
 
-- **Fresh Linux installations** on all three machines
-- **SSH access** configured on both Pis
-- **Internet connectivity** during installation
+- **Raspberry Pi OS 64-bit** (Bookworm or later) on both Pis
+- **Ubuntu Server** or **Debian** on CoreSrv
+- **SSH access** to all three machines
 - **Git** installed on all machines
 
-### Network Setup
+### Network
 
-- All three machines on the same network
-- Static IP addresses or DHCP reservations recommended
-- For Pi #2: Access to a network switch with port mirroring/SPAN capability (optional but recommended)
+- All three nodes on the same network
+- SSH access from your workstation to all nodes
+- Internet connectivity for package downloads
 
 ## Installation Steps
 
-### Step 1: Bootstrap CoreSrv
+### Step 1: Prepare CoreSrv (Dell Server)
 
-Run this on the Dell/CoreSrv machine (or SSH into it first):
+1. **SSH into your CoreSrv:**
 
-```bash
-# Clone the installer repository
-git clone https://github.com/yorgosroussakis/Orion-sentinel-installer.git
-cd Orion-sentinel-installer
-
-# Run the CoreSrv bootstrap script
-./scripts/bootstrap-coresrv.sh
-```
-
-The script will:
-- Install Docker and Docker Compose
-- Clone the Orion-Sentinel-CoreSrv repository to `/opt/Orion-Sentinel-CoreSrv`
-- Create required directory structure under `/srv/orion-sentinel-core`
-- Generate environment file templates from examples
-
-**Post-bootstrap configuration:**
-
-```bash
-cd /opt/Orion-Sentinel-CoreSrv/env
-
-# Edit .env.core - configure Authelia secrets and domain settings
-nano .env.core
-
-# Edit .env.monitoring - configure Grafana credentials
-nano .env.monitoring
-```
-
-Required configurations in `.env.core`:
-- `AUTHELIA_JWT_SECRET` - Generate with `openssl rand -base64 64`
-- `AUTHELIA_SESSION_SECRET` - Generate with `openssl rand -base64 64`
-- `AUTHELIA_STORAGE_ENCRYPTION_KEY` - Generate with `openssl rand -base64 64`
-
-Required configurations in `.env.monitoring`:
-- `GRAFANA_ADMIN_USER` - Your desired admin username
-- `GRAFANA_ADMIN_PASSWORD` - Your desired admin password
-- `MONITORING_ROOT` - Path for monitoring data (default: `/srv/orion-sentinel-core/monitoring`)
-
-**Bring up the core services:**
-
-```bash
-cd /opt/Orion-Sentinel-CoreSrv
-
-# Start core stack (Traefik + Authelia)
-./orionctl.sh up-core
-
-# Start monitoring stack (Prometheus + Loki + Grafana)
-./orionctl.sh up-observability
-```
-
-Verify services are running:
-```bash
-./orionctl.sh status
-```
-
-### Step 2: Bootstrap Pi #1 (DNS)
-
-Run this from your laptop or from CoreSrv. You can also run it directly on Pi #1 by leaving the hostname empty.
-
-```bash
-cd Orion-sentinel-installer
-
-# Set environment variables
-export PI_DNS_HOST="192.168.1.100"  # Replace with your Pi #1 IP
-export CORESRV_IP="192.168.1.10"    # Replace with your CoreSrv IP
-
-# Run the DNS bootstrap script
-./scripts/bootstrap-pi1-dns.sh
-```
-
-The script will:
-- SSH into Pi #1 (if `PI_DNS_HOST` is set)
-- Install Docker and Docker Compose
-- Clone the rpi-ha-dns-stack repository to `/opt/rpi-ha-dns-stack`
-- Configure the DNS stack
-- Bring up Pi-hole and Unbound containers
-- Deploy Promtail agent configured to send logs to CoreSrv Loki
-
-**Verification:**
-
-1. Access Pi-hole admin interface:
-   ```
-   http://192.168.1.100/admin
-   ```
-
-2. Check Grafana on CoreSrv:
-   - Navigate to Loki Explore
-   - Query: `{host="pi-dns"}`
-   - You should see logs from the DNS Pi
-
-### Step 3: Bootstrap Pi #2 (NetSec)
-
-Run this from your laptop or from CoreSrv:
-
-```bash
-cd Orion-sentinel-installer
-
-# Set environment variables
-export PI_NETSEC_HOST="192.168.1.101"  # Replace with your Pi #2 IP
-export CORESRV_IP="192.168.1.10"       # Replace with your CoreSrv IP
-
-# Run the NetSec bootstrap script
-./scripts/bootstrap-pi2-netsec.sh
-```
-
-The script will:
-- SSH into Pi #2
-- Install Docker and Docker Compose
-- Clone the Orion-sentinel-netsec-ai repository to `/opt/Orion-sentinel-netsec-ai`
-- Configure `.env` file with `LOKI_URL=http://CORESRV_IP:3100` and `LOCAL_OBSERVABILITY=false`
-- Bring up NSM stack (`stacks/nsm`)
-- Bring up AI stack (`stacks/ai`)
-
-**Verification:**
-
-1. Check Grafana on CoreSrv:
-   - Navigate to Loki Explore
-   - Query: `{host="pi-netsec"}`
-   - You should see logs from the NetSec Pi
-
-2. Verify containers on Pi #2:
    ```bash
-   ssh pi@192.168.1.101
+   ssh user@<coresrv-ip>
+   ```
+
+2. **Clone the installer repository:**
+
+   ```bash
+   git clone https://github.com/yorgosroussakis/Orion-sentinel-installer.git
+   cd Orion-sentinel-installer
+   ```
+
+3. **Run the CoreSrv bootstrap script:**
+
+   ```bash
+   ./scripts/bootstrap-coresrv.sh
+   ```
+
+   This will:
+   - Install Docker CE
+   - Clone the Orion-Sentinel-CoreSrv repository to `/opt/Orion-Sentinel-CoreSrv`
+   - Create data directories under `/srv/orion-sentinel-core/`
+   - Generate environment files from examples
+   - Optionally start Traefik, Authelia, Loki, Grafana, and Prometheus
+
+4. **Configure environment files:**
+
+   Edit the generated `.env` files:
+
+   ```bash
+   cd /opt/Orion-Sentinel-CoreSrv
+   nano env/.env.core
+   nano env/.env.monitoring
+   ```
+
+   Fill in required values:
+   - `AUTHELIA_JWT_SECRET` (generate with `openssl rand -base64 32`)
+   - `AUTHELIA_SESSION_SECRET` (generate with `openssl rand -base64 32`)
+   - `AUTHELIA_STORAGE_ENCRYPTION_KEY` (generate with `openssl rand -base64 32`)
+   - `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD`
+   - `MONITORING_ROOT=/srv/orion-sentinel-core/monitoring`
+
+5. **Start the CoreSrv services:**
+
+   ```bash
+   cd /opt/Orion-Sentinel-CoreSrv
+   ./orionctl.sh up-core           # Start Traefik + Authelia
+   ./orionctl.sh up-observability  # Start Loki + Grafana + Prometheus
+   ```
+
+6. **Verify CoreSrv is running:**
+
+   ```bash
    docker ps
    ```
 
-### Step 4: Full Stack Deployment (Alternative)
+   You should see containers for:
+   - Traefik
+   - Authelia
+   - Loki
+   - Grafana
+   - Prometheus
 
-Instead of running Steps 1-3 individually, you can use the orchestration script:
+7. **Access Grafana:**
+
+   Open a browser and navigate to:
+   - `http://<coresrv-ip>:3000`
+   - Login with the credentials you set in `.env.monitoring`
+
+### Step 2: Bootstrap Pi #1 (DNS)
+
+You can run this either **from your workstation** (remote mode) or **directly on Pi #1** (local mode).
+
+#### Option A: Remote Mode (from your workstation)
+
+1. **On your workstation, clone the installer:**
+
+   ```bash
+   git clone https://github.com/yorgosroussakis/Orion-sentinel-installer.git
+   cd Orion-sentinel-installer
+   ```
+
+2. **Run the Pi #1 bootstrap script remotely:**
+
+   ```bash
+   ./scripts/bootstrap-pi1-dns.sh \
+     --host <pi1-hostname-or-ip> \
+     --coresrv <coresrv-ip>
+   ```
+
+   Example:
+   ```bash
+   ./scripts/bootstrap-pi1-dns.sh --host pi-dns.local --coresrv 192.168.1.50
+   ```
+
+#### Option B: Local Mode (on Pi #1 itself)
+
+1. **SSH into Pi #1:**
+
+   ```bash
+   ssh pi@<pi1-ip>
+   ```
+
+2. **Clone the installer repository:**
+
+   ```bash
+   git clone https://github.com/yorgosroussakis/Orion-sentinel-installer.git
+   cd Orion-sentinel-installer
+   ```
+
+3. **Run the bootstrap script:**
+
+   ```bash
+   ./scripts/bootstrap-pi1-dns.sh --coresrv <coresrv-ip>
+   ```
+
+   Example:
+   ```bash
+   ./scripts/bootstrap-pi1-dns.sh --coresrv 192.168.1.50
+   ```
+
+#### What This Does
+
+- Installs Docker CE on Pi #1
+- Clones the DNS repository to `/opt/rpi-ha-dns-stack`
+- Generates `.env` configuration
+- Starts Pi-hole and Unbound containers
+- Deploys Promtail configured to send logs to CoreSrv Loki
+
+### Step 3: Bootstrap Pi #2 (NetSec)
+
+Similar to Pi #1, you can run this remotely or locally.
+
+#### Option A: Remote Mode (from your workstation)
 
 ```bash
-cd Orion-sentinel-installer
-
-# Run the full deployment orchestrator
-./scripts/deploy-orion-sentinel.sh
+./scripts/bootstrap-pi2-netsec.sh \
+  --host <pi2-hostname-or-ip> \
+  --coresrv <coresrv-ip>
 ```
 
-This interactive script will:
-- Prompt for CoreSrv IP, Pi DNS host, and Pi NetSec host
-- Optionally bootstrap CoreSrv (if you confirm)
-- Bootstrap both Pis in sequence
-- Provide a comprehensive deployment checklist
+Example:
+```bash
+./scripts/bootstrap-pi2-netsec.sh --host pi-netsec.local --coresrv 192.168.1.50
+```
 
-### Step 5: Validate Deployment
+#### Option B: Local Mode (on Pi #2 itself)
 
-#### Check CoreSrv Services
+1. **SSH into Pi #2:**
+
+   ```bash
+   ssh pi@<pi2-ip>
+   ```
+
+2. **Clone the installer repository:**
+
+   ```bash
+   git clone https://github.com/yorgosroussakis/Orion-sentinel-installer.git
+   cd Orion-sentinel-installer
+   ```
+
+3. **Run the bootstrap script:**
+
+   ```bash
+   ./scripts/bootstrap-pi2-netsec.sh --coresrv <coresrv-ip>
+   ```
+
+#### What This Does
+
+- Installs Docker CE on Pi #2
+- Clones the NetSec repository to `/opt/Orion-sentinel-netsec-ai`
+- Generates `.env` with SPoG configuration:
+  - `LOKI_URL=http://<coresrv-ip>:3100`
+  - `LOCAL_OBSERVABILITY=false`
+- Starts NSM stack (Suricata, etc.)
+- Starts AI stack
+
+### Step 4: Full Orchestration (Optional)
+
+For an automated deployment of all components, use the full orchestrator:
 
 ```bash
-ssh user@coresrv-ip
+./scripts/deploy-orion-sentinel.sh \
+  --coresrv <coresrv-ip> \
+  --pi-dns <pi1-hostname> \
+  --pi-netsec <pi2-hostname>
+```
+
+Example:
+```bash
+./scripts/deploy-orion-sentinel.sh \
+  --coresrv 192.168.1.50 \
+  --pi-dns pi1.local \
+  --pi-netsec pi2.local
+```
+
+Use `--skip-coresrv` if you've already set up CoreSrv manually.
+
+## Verification
+
+### 1. Check Services on CoreSrv
+
+```bash
+ssh user@<coresrv-ip>
 cd /opt/Orion-Sentinel-CoreSrv
-./orionctl.sh status
+docker ps
 ```
 
-All services should show as "Up" or "running".
+You should see:
+- `traefik`
+- `authelia`
+- `loki`
+- `grafana`
+- `prometheus` (if enabled)
 
-#### Access Grafana
+### 2. Verify Logs in Grafana
 
-```
-http://CORESRV_IP:3000
-# or https://grafana.local (if DNS and Traefik configured)
-```
+1. Access Grafana: `http://<coresrv-ip>:3000`
+2. Go to **Explore** → Select **Loki** as data source
+3. Query for Pi #1 logs: `{host="pi-dns"}`
+4. Query for Pi #2 logs: `{host="pi-netsec"}`
 
-Login with the credentials you set in `.env.monitoring`.
+You should see logs streaming from both Pis.
 
-#### Verify Loki Logs
-
-In Grafana:
-1. Navigate to **Explore**
-2. Select **Loki** as the data source
-3. Run queries:
-   - `{host="pi-dns"}` - Should show DNS Pi logs
-   - `{host="pi-netsec"}` - Should show NetSec Pi logs
-
-#### Verify Prometheus Metrics (if configured)
-
-In Grafana:
-1. Navigate to **Explore**
-2. Select **Prometheus** as the data source
-3. Check for metrics from both Pis (if exporters are configured)
-
-#### Test DNS Filtering
+### 3. Test DNS Filtering
 
 1. Configure a test device to use Pi #1 as DNS server
 2. Visit a website with ads
-3. Ads should be blocked
-4. Check Pi-hole query log: `http://PI_DNS_IP/admin`
+3. Verify ads are blocked
+4. Check Pi-hole admin: `http://<pi1-ip>/admin`
 
-#### Test Network Monitoring
+### 4. Verify Network Monitoring
 
-1. Ensure Pi #2 is connected to a switch mirror/SPAN port
-2. Generate some network traffic
-3. Check Grafana dashboards for network activity
-4. Review Suricata alerts (if any)
+1. Ensure Pi #2 is connected to a mirrored/SPAN port
+2. Check Grafana dashboards for network traffic
+3. Look for Suricata alerts in Loki logs: `{host="pi-netsec"} |= "suricata"`
 
 ## Advanced Configuration
 
-### High Availability DNS
+### Configure Traefik Routes
 
-To add a second DNS Pi for HA:
+To access services via friendly hostnames (e.g., `https://dns.local`):
 
-1. Bootstrap another Pi using the same DNS bootstrap script
-2. Edit `.env` on both DNS Pis:
+1. On CoreSrv, add Traefik dynamic configuration in `/opt/Orion-Sentinel-CoreSrv/config/traefik/dynamic/`
+2. Create route files for Pi services
+3. Add DNS records or `/etc/hosts` entries on your workstation
+
+Example `/etc/hosts` entry:
+```
+192.168.1.50   grafana.local traefik.local auth.local
+192.168.1.10   dns.local
+192.168.1.11   security.local
+```
+
+### Set Up High Availability DNS
+
+To configure DNS HA with Keepalived:
+
+1. Set up a second Pi with the DNS bootstrap script
+2. Edit `.env` on both Pis:
    ```bash
-   KEEPALIVED_VIRTUAL_IP=192.168.1.50
-   KEEPALIVED_STATE=MASTER  # on Pi #1
-   KEEPALIVED_STATE=BACKUP  # on Pi #2
-   KEEPALIVED_PRIORITY=100  # on Pi #1
-   KEEPALIVED_PRIORITY=90   # on Pi #2
+   ssh pi@<pi1-ip>
+   nano /opt/rpi-ha-dns-stack/.env
    ```
-3. Restart DNS stacks on both Pis
-4. Configure router DNS to use the Virtual IP (192.168.1.50)
+3. Configure:
+   - `KEEPALIVED_VIRTUAL_IP` (a free IP on your network)
+   - `KEEPALIVED_PRIORITY` (100 on primary, 90 on backup)
+   - `KEEPALIVED_STATE` (MASTER on primary, BACKUP on backup)
+4. Restart services on both Pis
+5. Update router DNS to use the Virtual IP
 
-### Traefik Dynamic Configuration
+### Customize NetSec Monitoring
 
-To expose Pi services via Traefik on CoreSrv:
+Edit `/opt/Orion-sentinel-netsec-ai/.env` on Pi #2:
 
-1. Create dynamic config files in `/opt/Orion-Sentinel-CoreSrv/config/traefik/dynamic/`
-2. Example for DNS Pi:
-   ```yaml
-   # dns-pi.yml
-   http:
-     routers:
-       dns-admin:
-         rule: "Host(`dns.local`)"
-         service: dns-admin
-         middlewares:
-           - authelia
-     services:
-       dns-admin:
-         loadBalancer:
-           servers:
-             - url: "http://192.168.1.100"
-   ```
-
-3. Set up local DNS or `/etc/hosts`:
-   ```
-   192.168.1.10  dns.local
-   192.168.1.10  security.local
-   192.168.1.10  grafana.local
-   ```
-
-### Custom Promtail Configuration
-
-Promtail configuration is generated during bootstrap. To customize:
-
-**On DNS Pi:**
 ```bash
-ssh pi@pi-dns-ip
-sudo nano /etc/promtail/promtail-config.yml
-# Make changes
-docker restart promtail
+NSM_INTERFACE=eth0  # or your mirrored interface
+LOKI_URL=http://<coresrv-ip>:3100
+LOCAL_OBSERVABILITY=false
 ```
 
-**On NetSec Pi:**
-Promtail configuration should be part of the Orion-sentinel-netsec-ai repository's `.env` file via `LOKI_URL`.
-
-## Maintenance
-
-### Updating Services
-
-**Update CoreSrv:**
+Restart services:
 ```bash
-cd /opt/Orion-Sentinel-CoreSrv
-git pull
-./orionctl.sh restart-all
-```
-
-**Update DNS Pi:**
-```bash
-ssh pi@pi-dns-ip
-cd /opt/rpi-ha-dns-stack
-git pull
-docker compose down && docker compose up -d
-```
-
-**Update NetSec Pi:**
-```bash
-ssh pi@pi-netsec-ip
 cd /opt/Orion-sentinel-netsec-ai
-git pull
-cd stacks/nsm && docker compose down && docker compose up -d
-cd ../ai && docker compose down && docker compose up -d
-```
-
-### Monitoring Disk Space
-
-Check disk usage on all nodes regularly:
-```bash
-df -h
-docker system df
-```
-
-Clean up old Docker resources:
-```bash
-docker system prune -a --volumes
-```
-
-### Log Rotation
-
-Loki on CoreSrv handles log retention. Configure in `.env.monitoring`:
-```
-LOKI_RETENTION_PERIOD=720h  # 30 days
+docker compose down
+docker compose up -d
 ```
 
 ## Troubleshooting
 
-### Logs not appearing in Loki
+### Logs Not Appearing in Grafana
 
-1. Check Promtail is running on the Pi:
-   ```bash
-   docker ps | grep promtail
-   ```
-
-2. Check Promtail logs:
+1. **Check Promtail on Pis:**
    ```bash
    docker logs promtail
    ```
+   Look for connection errors to Loki.
 
-3. Verify CoreSrv Loki is accessible:
+2. **Check Loki on CoreSrv:**
    ```bash
-   curl http://CORESRV_IP:3100/ready
+   docker logs loki
    ```
 
-4. Check firewall on CoreSrv:
+3. **Verify network connectivity:**
    ```bash
-   sudo ufw status
-   # Allow port 3100 if needed
-   sudo ufw allow 3100/tcp
+   curl http://<coresrv-ip>:3100/ready
    ```
 
-### Docker permission issues
+### Docker Permission Errors
 
-On any Pi:
 ```bash
 sudo usermod -aG docker $USER
-# Log out and back in, or:
 newgrp docker
 ```
 
-### Services not starting on CoreSrv
+### Services Not Starting
 
 Check logs:
 ```bash
-cd /opt/Orion-Sentinel-CoreSrv
-./orionctl.sh logs
+docker compose logs <service-name>
 ```
 
-Verify environment files:
+Check disk space:
 ```bash
-cat env/.env.core
-cat env/.env.monitoring
+df -h
 ```
 
-### DNS not working after Pi #1 setup
+Check port conflicts:
+```bash
+sudo netstat -tulpn | grep <port>
+```
 
-1. Verify Pi-hole is running:
-   ```bash
-   ssh pi@pi-dns-ip
-   docker ps | grep pihole
-   ```
+## Next Steps
 
-2. Test DNS resolution from Pi itself:
-   ```bash
-   nslookup google.com localhost
-   ```
+1. **Configure Alerts:** Set up Grafana alerts for critical events
+2. **Backup Configuration:** Back up `.env` files and Grafana dashboards
+3. **Monitor Performance:** Watch CPU, memory, and disk usage
+4. **Update Regularly:** Keep Docker images and packages up to date
+5. **Explore Dashboards:** Import community Grafana dashboards for Pi-hole, Suricata, etc.
 
-3. Check router DNS configuration
-4. Clear DNS cache on client devices
+## References
 
-## Additional Resources
+- [Orion-Sentinel-CoreSrv Repository](https://github.com/yorgosroussakis/Orion-Sentinel-CoreSrv)
+- [rpi-ha-dns-stack Repository](https://github.com/yorgosroussakis/rpi-ha-dns-stack)
+- [Orion-sentinel-netsec-ai Repository](https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai)
+- [Config Reference](./CONFIG-REFERENCE.md)
 
-- **CoreSrv Repository**: [Orion-Sentinel-CoreSrv](https://github.com/yorgosroussakis/Orion-Sentinel-CoreSrv)
-- **DNS HA Repository**: [rpi-ha-dns-stack](https://github.com/yorgosroussakis/rpi-ha-dns-stack)
-- **NetSec Repository**: [Orion-sentinel-netsec-ai](https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai)
-- **Configuration Reference**: [CONFIG-REFERENCE.md](CONFIG-REFERENCE.md)
+---
 
-## Getting Help
-
-For issues:
-1. Check this guide and the troubleshooting section
-2. Review component-specific documentation in their repositories
-3. Check existing GitHub issues
-4. Open a new issue with detailed error messages and logs
-
-Happy monitoring! 🛡️
+**Happy monitoring! 🛡️🔒**

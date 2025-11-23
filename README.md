@@ -1,54 +1,52 @@
 # Orion Sentinel Installer
 
-A unified installer for deploying the **Orion Sentinel** home network security and privacy suite across three nodes: a Dell server (CoreSrv) and two Raspberry Pis.
+A unified installer for deploying the **Orion Sentinel** home network security and privacy suite across multiple architectures.
 
 ## Overview
 
-Orion Sentinel is a comprehensive home network security solution using a **Single Pane of Glass (SPoG)** architecture:
+Orion Sentinel is a comprehensive home network security solution that supports two deployment architectures:
+
+### Two-Pi Architecture (Original)
 
 - **CoreSrv (Dell/Server)**: Central observability platform running Traefik, Authelia, Prometheus, Loki, and Grafana
 - **Pi #1 (DNS)**: Ad-blocking and DNS filtering via Pi-hole + Unbound with optional high availability
 - **Pi #2 (NetSec)**: Network security monitoring, intrusion detection, and AI-powered threat analysis
 
-All logs and metrics from both Pis are forwarded to CoreSrv for centralized monitoring and visualization.
+**Status**: Fully supported for simple two-Pi deployments.
 
-This installer repository provides simple bootstrap scripts to deploy the complete three-node stack with minimal effort.
+### Three-Node Architecture with CoreSrv (NEW) ⭐
 
-## Architecture
+A more advanced architecture with centralized observability:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Your Home Network                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌────────────────────────────────────────────────────┐    │
-│  │       CoreSrv (Dell) - Single Pane of Glass        │    │
-│  │  • Traefik • Authelia • Prometheus • Loki • Grafana│    │
-│  └────────────────────────────────────────────────────┘    │
-│                     ▲              ▲                         │
-│            Logs & Metrics    Logs & Metrics                 │
-│                     │              │                         │
-│  ┌──────────────────┴──┐    ┌─────┴──────────────┐         │
-│  │  Pi #1 (DNS)        │    │  Pi #2 (NetSec)    │         │
-│  │ • Pi-hole           │    │ • Suricata IDS     │         │
-│  │ • Unbound DNS       │    │ • AI Detection     │         │
-│  │ • Promtail Agent    │    │ • Promtail Agent   │         │
-│  └─────────────────────┘    └────────────────────┘         │
-└─────────────────────────────────────────────────────────────┘
-```
+- **CoreSrv (Dell/Server)**: Central Single Pane of Glass (SPoG) running Loki, Grafana, Prometheus, Traefik, and Authelia
+- **Pi #1 (DNS)**: Pi-hole + Unbound with Promtail agent sending logs to CoreSrv
+- **Pi #2 (NetSec)**: Network Security Monitoring + AI, configured in SPoG mode with all logs sent to CoreSrv
+
+**Benefits**:
+- Centralized monitoring and logging on a powerful server
+- Better performance on Pis (no local Grafana/Loki overhead)
+- Single dashboard for all components
+- Enterprise-grade auth via Authelia
+- Reverse proxy with SSL via Traefik
+
+See [Getting Started with Three-Node Architecture](docs/GETTING-STARTED-THREE-NODE.md) for detailed setup instructions.
 
 ## Requirements
 
 ### Hardware
 
-- **1× Dell Server or PC** (CoreSrv)
-  - 8GB+ RAM recommended
-  - 100GB+ storage
-  - Linux (Debian/Ubuntu recommended)
+**For Two-Pi Architecture:**
+- **Two Raspberry Pi devices** (Raspberry Pi 4/5 recommended, 4GB+ RAM preferred)
+- **Network connectivity** for both Pis
+- **SSH access** to both Pis
+- **SD cards** with Raspberry Pi OS 64-bit installed
 
-- **2× Raspberry Pi 4 or 5** (4GB+ RAM recommended)
-  - Pi #1: DNS HA node
-  - Pi #2: NetSec node
+**For Three-Node Architecture (recommended):**
+- **One x86 Server** (Dell, NUC, or similar - 16GB+ RAM recommended for CoreSrv)
+- **Two Raspberry Pi 5** devices (8GB RAM recommended)
+- **Network connectivity** for all three nodes
+- **SSH access** to all nodes
+- **Static IP addresses** or DHCP reservations recommended
 
 ### Software
 
@@ -59,20 +57,56 @@ This installer repository provides simple bootstrap scripts to deploy the comple
 
 ### Network Setup
 
-- All three machines on the same network
-- Static IP addresses or DHCP reservations recommended
-- For Pi #2: Network switch with port mirroring/SPAN capability (optional but recommended)
+**For Two-Pi Architecture:**
+- **Pi #1 (DNS)**: Should be accessible to all devices on your network
+- **Pi #2 (NSM)**: Should be connected to a network switch mirror/SPAN port for traffic monitoring (optional but recommended for full functionality)
+
+**For Three-Node Architecture:**
+- **CoreSrv**: Central server with static IP, accessible from your workstation and both Pis
+- **Pi #1 (DNS)**: Should be accessible to all devices on your network for DNS queries
+- **Pi #2 (NetSec)**: Should be connected to a network switch mirror/SPAN port for traffic monitoring
+- **Important**: Pis push logs to CoreSrv; CoreSrv never SSHs into Pis
 
 ## Quick Start
 
-There are two ways to install Orion Sentinel:
+Choose your deployment architecture:
 
-1. **Local Installation**: SSH into each Pi and run the bootstrap scripts directly
-2. **Remote Orchestration**: Run the orchestrator script from your local machine to set up both Pis remotely
+### Three-Node Architecture (CoreSrv + 2 Pis) - Recommended for Homelabs
 
-### Option 1: Remote Orchestration (Recommended)
+**Best for**: Users with a server/NUC and want centralized monitoring
 
-If you have SSH access to both Pis from your local machine, you can use the orchestrator script for a streamlined installation:
+1. **Set up CoreSrv first** (on your Dell/server):
+
+   ```bash
+   ssh user@coresrv-ip
+   git clone https://github.com/yorgosroussakis/Orion-sentinel-installer.git
+   cd Orion-sentinel-installer
+   ./scripts/bootstrap-coresrv.sh
+   ```
+
+2. **Deploy to both Pis** (from your workstation):
+
+   ```bash
+   git clone https://github.com/yorgosroussakis/Orion-sentinel-installer.git
+   cd Orion-sentinel-installer
+   
+   # Full orchestration
+   ./scripts/deploy-orion-sentinel.sh \
+     --coresrv 192.168.1.50 \
+     --pi-dns pi1.local \
+     --pi-netsec pi2.local
+   ```
+
+3. **Access Grafana on CoreSrv**:
+   - URL: `http://<coresrv-ip>:3000`
+   - View logs from both Pis in one place
+   - Centralized dashboards and alerting
+
+📖 **Detailed Guide**: [Getting Started with Three-Node Architecture](docs/GETTING-STARTED-THREE-NODE.md)
+
+### Two-Pi Architecture (Standalone) - Simple Setup
+
+**Best for**: Users without a dedicated server, want self-contained Pis
 
 1. **Clone this repository on your local machine**
 
@@ -84,10 +118,6 @@ If you have SSH access to both Pis from your local machine, you can use the orch
 2. **Set up SSH key authentication** (if not already done)
 
    ```bash
-   # Generate SSH key if you don't have one
-   ssh-keygen -t ed25519
-   
-   # Copy your SSH key to both Pis
    ssh-copy-id pi@<pi1-ip-address>
    ssh-copy-id pi@<pi2-ip-address>
    ```
@@ -95,102 +125,55 @@ If you have SSH access to both Pis from your local machine, you can use the orch
 3. **Run the orchestrator script**
 
    ```bash
-   # Install on both Pis
    ./scripts/orchestrate-install.sh --pi1 pi1.local --pi2 pi2.local
-   
-   # Or use IP addresses
-   ./scripts/orchestrate-install.sh --pi1 192.168.1.10 --pi2 192.168.1.11
-   
-   # Or install only DNS on Pi #1
-   ./scripts/orchestrate-install.sh --pi1 pi-dns.local --dns-only
-   
-   # Or install only NSM on Pi #2
-   ./scripts/orchestrate-install.sh --pi2 pi-nsm.local --nsm-only
    ```
 
 4. **Configure your network**
    - Set your router's DNS server to your Pi #1's IP address
    - Connect Pi #2 to a network mirror/SPAN port (optional but recommended)
 
-### Option 2: Local Installation
-
-If you prefer to install directly on each Pi:
-
-#### Pi #1: DNS & Privacy Setup
-
-#### Step 1: Bootstrap CoreSrv
-
-Run on the Dell/CoreSrv machine:
-
-#### Step 1: Bootstrap CoreSrv
-
-Run on the Dell/CoreSrv machine:
-
-```bash
-git clone https://github.com/yorgosroussakis/orion-sentinel-installer.git
-cd orion-sentinel-installer
-./scripts/bootstrap-coresrv.sh
-```
-
-Then configure environment files:
-
-```bash
-cd /opt/Orion-Sentinel-CoreSrv/env
-nano .env.core        # Set Authelia secrets
-nano .env.monitoring  # Set Grafana credentials
-
-# Start CoreSrv services
-cd /opt/Orion-Sentinel-CoreSrv
-./orionctl.sh up-core
-./orionctl.sh up-observability
-```
-
-#### Pi #2: Security & Monitoring Setup
-
-Run from your laptop or CoreSrv:
-
-```bash
-cd orion-sentinel-installer
-
-export PI_DNS_HOST="192.168.1.100"  # Your Pi #1 IP
-export CORESRV_IP="192.168.1.10"    # Your CoreSrv IP
-
-./scripts/bootstrap-pi1-dns.sh
-```
-
-#### Step 3: Bootstrap Pi #2 (NetSec)
-
-Run from your laptop or CoreSrv:
-
-```bash
-export PI_NETSEC_HOST="192.168.1.101"  # Your Pi #2 IP
-export CORESRV_IP="192.168.1.10"       # Your CoreSrv IP
-
-./scripts/bootstrap-pi2-netsec.sh
-```
+📙 **Detailed Guide**: [Getting Started with Two Pis](docs/getting-started-two-pi.md)
 
 ## What Gets Installed
 
-### CoreSrv (Dell/Server)
+### Three-Node Architecture
 
-The bootstrap script will:
-- ✅ Install Docker CE and Docker Compose
-- ✅ Clone the [Orion-Sentinel-CoreSrv](https://github.com/yorgosroussakis/Orion-Sentinel-CoreSrv) repository
-- ✅ Create directory structure under `/srv/orion-sentinel-core`
-- ✅ Generate environment file templates
-- ✅ Set up Traefik (reverse proxy)
-- ✅ Set up Authelia (authentication)
-- ✅ Set up Prometheus (metrics)
-- ✅ Set up Loki (log aggregation)
-- ✅ Set up Grafana (visualization)
+#### CoreSrv (Dell/Server)
+- ✅ Docker CE and Docker Compose
+- ✅ Traefik reverse proxy with SSL
+- ✅ Authelia for authentication
+- ✅ Loki for centralized log aggregation
+- ✅ Grafana for visualization
+- ✅ Prometheus for metrics collection (optional)
 
 **Installation location**: `/opt/Orion-Sentinel-CoreSrv`
 
-### Pi #1 (DNS & Privacy)
+#### Pi #1 (DNS)
+- ✅ Docker CE and Docker Compose
+- ✅ Pi-hole for network-wide ad blocking
+- ✅ Unbound for recursive DNS
+- ✅ Keepalived for high availability (optional)
+- ✅ Promtail agent sending logs to CoreSrv
+
+**Installation location**: `/opt/rpi-ha-dns-stack`
+
+#### Pi #2 (NetSec)
+- ✅ Docker CE and Docker Compose
+- ✅ Suricata for network monitoring
+- ✅ AI-powered threat detection
+- ✅ Configured in SPoG mode (logs sent to CoreSrv)
+- ✅ Promtail agent (if part of the repo)
+
+**Installation location**: `/opt/Orion-sentinel-netsec-ai`
+
+### Two-Pi Architecture
+
+#### Pi #1 (DNS & Privacy)
 
 The bootstrap script will:
-- ✅ Install Docker CE and Docker Compose (remote or local)
-- ✅ Clone the [rpi-ha-dns-stack](https://github.com/yorgosroussakis/rpi-ha-dns-stack) repository
+- ✅ Install Docker CE and Docker Compose
+- ✅ Clone the DNS repository
+- ✅ Run the DNS installation script (single-node mode by default)
 - ✅ Set up Pi-hole for network-wide ad blocking
 - ✅ Set up Unbound for recursive DNS
 - ✅ Configure optional high availability with Keepalived
@@ -198,19 +181,34 @@ The bootstrap script will:
 
 **Installation location**: `/opt/rpi-ha-dns-stack`
 
-### Pi #2 (Security & Monitoring)
+#### Pi #2 (Security & Monitoring)
 
 The bootstrap script will:
-- ✅ Install Docker CE and Docker Compose (remote or local)
-- ✅ Clone the [Orion-sentinel-netsec-ai](https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai) repository
-- ✅ Configure `.env` for SPoG mode (logs → CoreSrv)
+- ✅ Install Docker CE and Docker Compose
+- ✅ Clone the NSM repository
+- ✅ Run the NSM installation script
 - ✅ Set up network monitoring with Suricata
 - ✅ Deploy AI-powered threat detection
 - ✅ Forward logs and metrics to CoreSrv
 
 **Installation location**: `/opt/Orion-sentinel-netsec-ai`
 
-## Validation
+## Documentation
+
+### Three-Node Architecture (CoreSrv + 2 Pis)
+- 📘 **[Getting Started Guide](docs/GETTING-STARTED-THREE-NODE.md)** - Complete setup walkthrough
+- 📗 **[Configuration Reference](docs/CONFIG-REFERENCE.md)** - All configuration variables and settings
+- 🏗️ **Architecture**: CoreSrv (SPoG) + DNS Pi + NetSec Pi
+
+### Two-Pi Architecture (Standalone)
+- 📙 **[Getting Started with Two Pis](docs/getting-started-two-pi.md)** - Original two-Pi setup guide
+
+### Component Repositories
+- [Orion-Sentinel-CoreSrv](https://github.com/yorgosroussakis/Orion-Sentinel-CoreSrv) - Central SPoG (Traefik, Loki, Grafana, Prometheus)
+- [rpi-ha-dns-stack](https://github.com/yorgosroussakis/rpi-ha-dns-stack) - DNS HA component (Pi-hole + Unbound)
+- [Orion-sentinel-netsec-ai](https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai) - NetSec component (NSM + AI)
+
+## Post-Installation
 
 After deployment, verify everything is working:
 
@@ -312,14 +310,47 @@ For more troubleshooting, see [GETTING-STARTED-THREE-NODE.md](docs/GETTING-START
 
 ## Architecture Highlights
 
-### Single Pane of Glass (SPoG)
+## Architecture Diagrams
 
-- **Centralized Monitoring**: All logs and metrics aggregated on CoreSrv
-- **No SSH Scraping**: Pis push data to CoreSrv via Promtail agents
-- **Unified Dashboards**: All services visible in single Grafana instance
-- **Secure Access**: Traefik + Authelia provide authentication and SSL
+### Three-Node Architecture
 
-### Security Best Practices
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    Orion Sentinel - Three Node               │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌─────────────────┐      ┌─────────────────┐              │
+│  │   Pi #1 (DNS)   │      │ Pi #2 (NetSec)  │              │
+│  ├─────────────────┤      ├─────────────────┤              │
+│  │ • Pi-hole       │      │ • Suricata IDS  │              │
+│  │ • Unbound       │      │ • AI Detection  │              │
+│  │ • Promtail ────┐│      │ • Promtail ────┐│              │
+│  └─────────────────┘│      └─────────────────┘│              │
+│           │         │               │         │              │
+│           │ Push    │               │ Push    │              │
+│           │ Logs    │               │ Logs    │              │
+│           ▼         │               ▼         │              │
+│  ┌──────────────────┴───────────────┴──────────────────┐    │
+│  │           CoreSrv (Dell Server - SPoG)              │    │
+│  ├─────────────────────────────────────────────────────┤    │
+│  │ • Traefik (Reverse Proxy + SSL)                     │    │
+│  │ • Authelia (Authentication)                          │    │
+│  │ • Loki (Centralized Log Aggregation) ◄───┐          │    │
+│  │ • Grafana (Visualization) ◄──────────────┤          │    │
+│  │ • Prometheus (Metrics Collection)         │          │    │
+│  └───────────────────────────────────────────┼──────────┘    │
+│                                               │               │
+│                                          ┌────┴─────┐         │
+│                                          │   User   │         │
+│                                          │ Workstation│       │
+│                                          └──────────┘         │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Key**: Pis PUSH logs to CoreSrv. CoreSrv never SSH into Pis.
+
+### Two-Pi Architecture
 
 - All secrets generated with strong random values
 - Authelia provides authentication layer
@@ -346,4 +377,4 @@ For issues specific to:
 
 ## Acknowledgments
 
-Built for homelabbers and power users who want enterprise-grade network security at home with centralized observability.
+Built for homelabbers and power users who want enterprise-grade network security at home, from simple two-Pi setups to advanced three-node architectures with centralized monitoring.
