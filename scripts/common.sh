@@ -44,6 +44,44 @@ require_cmd() {
     fi
 }
 
+# Yes/No confirmation
+# Usage: confirm "Are you sure?" && do_something
+confirm() {
+    local prompt="${1:-Are you sure?} [y/N] "
+    read -r -p "$prompt" ans
+    case "$ans" in
+        [Yy]|[Yy][Ee][Ss]) return 0 ;;
+        *)                 return 1 ;;
+    esac
+}
+
+# Run a command over SSH with nice logging
+# Usage: run_ssh <host> <command> [args...]
+run_ssh() {
+    local host="$1"; shift
+    echo "[SSH] $host: $*"
+    ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$host" "$@"
+}
+
+# Install Docker on a remote host (Debian/Raspbian/Ubuntu) in a simple way.
+# NOTE: For brevity this uses the get.docker.com script.
+# If you want the full "official repo" method, you can harden this further.
+# Usage: install_docker_remote <host>
+install_docker_remote() {
+    local host="$1"
+
+    run_ssh "$host" 'if command -v docker >/dev/null 2>&1; then
+        echo "[Remote] Docker already installed."
+        exit 0
+    fi'
+
+    echo "[INFO] Installing Docker on $host (using get.docker.com)..."
+    run_ssh "$host" 'curl -fsSL https://get.docker.com | sh'
+    # Add current user on the Pi to docker group (usually "pi" or same ssh user)
+    run_ssh "$host" 'sudo usermod -aG docker "$USER" || true'
+    echo "[INFO] Docker install triggered on $host. You may need to log out/in on that host."
+}
+
 # Install Docker CE and compose plugin if not already installed
 install_docker() {
     print_header "Checking Docker Installation"
