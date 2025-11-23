@@ -13,9 +13,9 @@ source "$SCRIPT_DIR/common.sh"
 
 # Configuration (can be overridden via environment variables)
 readonly ORION_BASE_DIR="${ORION_BASE_DIR:-$HOME/orion}"
-readonly DNS_REPO_URL="${DNS_REPO_URL:-https://github.com/yorgosroussakis/orion-sentinel-dns-ha.git}"
+readonly DNS_REPO_URL="${DNS_REPO_URL:-https://github.com/yorgosroussakis/rpi-ha-dns-stack.git}"
 readonly DNS_REPO_BRANCH="${DNS_REPO_BRANCH:-main}"
-readonly NSM_REPO_URL="${NSM_REPO_URL:-https://github.com/yorgosroussakis/orion-sentinel-nsm-ai.git}"
+readonly NSM_REPO_URL="${NSM_REPO_URL:-https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai.git}"
 readonly NSM_REPO_BRANCH="${NSM_REPO_BRANCH:-main}"
 
 print_usage() {
@@ -63,22 +63,22 @@ setup_dns_pi() {
     print_header "Setting up Pi #1 (DNS) on $host"
     
     # Install Docker on remote host
-    print_info "Installing Docker on $host..."
+    echo "[INFO] Installing Docker on $host..."
     install_docker_remote "$host"
     
     # Clone the DNS repository on remote host
-    print_info "Cloning DNS repository on $host..."
-    clone_or_update_remote "$host" "$DNS_REPO_URL" "$ORION_BASE_DIR/orion-sentinel-dns-ha" "$DNS_REPO_BRANCH"
+    echo "[INFO] Cloning DNS repository on $host..."
+    clone_or_update_remote "$host" "$DNS_REPO_URL" "$ORION_BASE_DIR/rpi-ha-dns-stack" "$DNS_REPO_BRANCH"
     
     # Run the DNS install script
-    print_info "Running DNS installation script on $host..."
-    run_ssh "$host" "cd $ORION_BASE_DIR/orion-sentinel-dns-ha && bash scripts/install.sh" || {
-        print_warning "DNS install script not found or failed"
-        print_info "You may need to configure and start services manually on $host"
+    echo "[INFO] Running DNS installation script on $host..."
+    run_ssh "$host" "cd $ORION_BASE_DIR/rpi-ha-dns-stack && bash scripts/install.sh" || {
+        echo "[WARN] DNS install script not found or failed"
+        echo "[INFO] You may need to configure and start services manually on $host"
     }
     
-    print_info "DNS setup complete on $host!"
-    print_info "Access Pi-hole admin at: http://$host/admin"
+    echo "[INFO] DNS setup complete on $host!"
+    echo "[INFO] Access Pi-hole admin at: http://$host/admin"
 }
 
 setup_nsm_pi() {
@@ -87,22 +87,22 @@ setup_nsm_pi() {
     print_header "Setting up Pi #2 (NSM) on $host"
     
     # Install Docker on remote host
-    print_info "Installing Docker on $host..."
+    echo "[INFO] Installing Docker on $host..."
     install_docker_remote "$host"
     
     # Clone the NSM repository on remote host
-    print_info "Cloning NSM repository on $host..."
-    clone_or_update_remote "$host" "$NSM_REPO_URL" "$ORION_BASE_DIR/orion-sentinel-nsm-ai" "$NSM_REPO_BRANCH"
+    echo "[INFO] Cloning NSM repository on $host..."
+    clone_or_update_remote "$host" "$NSM_REPO_URL" "$ORION_BASE_DIR/Orion-sentinel-netsec-ai" "$NSM_REPO_BRANCH"
     
     # Run the NSM install script
-    print_info "Running NSM installation script on $host..."
-    run_ssh "$host" "cd $ORION_BASE_DIR/orion-sentinel-nsm-ai && bash scripts/install.sh" || {
-        print_warning "NSM install script not found or failed"
-        print_info "You may need to configure and start services manually on $host"
+    echo "[INFO] Running NSM installation script on $host..."
+    run_ssh "$host" "cd $ORION_BASE_DIR/Orion-sentinel-netsec-ai && bash scripts/install.sh" || {
+        echo "[WARN] NSM install script not found or failed"
+        echo "[INFO] You may need to configure and start services manually on $host"
     }
     
-    print_info "NSM setup complete on $host!"
-    print_info "Access Grafana at: http://$host:3000"
+    echo "[INFO] NSM setup complete on $host!"
+    echo "[INFO] Access Grafana at: http://$host:3000"
 }
 
 main() {
@@ -135,7 +135,7 @@ main() {
                 exit 0
                 ;;
             *)
-                print_error "Unknown option: $1"
+                echo "ERROR: Unknown option: $1" >&2
                 print_usage
                 exit 1
                 ;;
@@ -144,25 +144,25 @@ main() {
     
     # Validate arguments
     if [ -z "$pi1_host" ] && [ -z "$pi2_host" ]; then
-        print_error "At least one Pi must be specified (--pi1 or --pi2)"
+        echo "ERROR: At least one Pi must be specified (--pi1 or --pi2)" >&2
         print_usage
         exit 1
     fi
     
     if [ "$dns_only" = true ] && [ "$nsm_only" = true ]; then
-        print_error "Cannot specify both --dns-only and --nsm-only"
+        echo "ERROR: Cannot specify both --dns-only and --nsm-only" >&2
         print_usage
         exit 1
     fi
     
     if [ "$dns_only" = true ] && [ -z "$pi1_host" ]; then
-        print_error "--dns-only requires --pi1 to be specified"
+        echo "ERROR: --dns-only requires --pi1 to be specified" >&2
         print_usage
         exit 1
     fi
     
     if [ "$nsm_only" = true ] && [ -z "$pi2_host" ]; then
-        print_error "--nsm-only requires --pi2 to be specified"
+        echo "ERROR: --nsm-only requires --pi2 to be specified" >&2
         print_usage
         exit 1
     fi
@@ -175,18 +175,18 @@ main() {
     
     # Show configuration
     echo ""
-    print_info "Configuration:"
+    echo "[INFO] Configuration:"
     if [ -n "$pi1_host" ] && [ "$nsm_only" = false ]; then
-        print_info "  Pi #1 (DNS): $pi1_host"
+        echo "[INFO]   Pi #1 (DNS): $pi1_host"
     fi
     if [ -n "$pi2_host" ] && [ "$dns_only" = false ]; then
-        print_info "  Pi #2 (NSM): $pi2_host"
+        echo "[INFO]   Pi #2 (NSM): $pi2_host"
     fi
     echo ""
     
     # Confirm before proceeding
     if ! confirm "Proceed with installation?"; then
-        print_info "Installation cancelled."
+        echo "[INFO] Installation cancelled."
         exit 0
     fi
     
@@ -202,16 +202,16 @@ main() {
     
     print_header "Installation Complete!"
     echo ""
-    print_info "🎉 Orion Sentinel has been deployed to your Raspberry Pis!"
+    echo "[INFO] 🎉 Orion Sentinel has been deployed to your Raspberry Pis!"
     echo ""
-    print_info "Next steps:"
+    echo "[INFO] Next steps:"
     if [ -n "$pi1_host" ] && [ "$nsm_only" = false ]; then
-        print_info "  1. Configure your router's DNS to point to: $pi1_host"
-        print_info "  2. Access Pi-hole admin: http://$pi1_host/admin"
+        echo "[INFO]   1. Configure your router's DNS to point to: $pi1_host"
+        echo "[INFO]   2. Access Pi-hole admin: http://$pi1_host/admin"
     fi
     if [ -n "$pi2_host" ] && [ "$dns_only" = false ]; then
-        print_info "  3. Access Grafana dashboard: http://$pi2_host:3000"
-        print_info "  4. Connect $pi2_host to a network mirror/SPAN port for traffic monitoring"
+        echo "[INFO]   3. Access Grafana dashboard: http://$pi2_host:3000"
+        echo "[INFO]   4. Connect $pi2_host to a network mirror/SPAN port for traffic monitoring"
     fi
     echo ""
 }
