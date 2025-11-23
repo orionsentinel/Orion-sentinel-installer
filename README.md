@@ -65,31 +65,58 @@ This installer repository provides simple bootstrap scripts to deploy the comple
 
 ## Quick Start
 
-### Option 1: Full Automated Deployment (Recommended)
+There are two ways to install Orion Sentinel:
 
-Deploy the entire three-node stack using the orchestration script:
+1. **Local Installation**: SSH into each Pi and run the bootstrap scripts directly
+2. **Remote Orchestration**: Run the orchestrator script from your local machine to set up both Pis remotely
 
-```bash
-# Clone this repository (on your laptop or CoreSrv)
-git clone https://github.com/yorgosroussakis/orion-sentinel-installer.git
-cd orion-sentinel-installer
+### Option 1: Remote Orchestration (Recommended)
 
-# Run the deployment orchestrator
-./scripts/deploy-orion-sentinel.sh
-```
+If you have SSH access to both Pis from your local machine, you can use the orchestrator script for a streamlined installation:
 
-The script will prompt for:
-- CoreSrv IP address
-- Pi #1 (DNS) hostname/IP
-- Pi #2 (NetSec) hostname/IP
+1. **Clone this repository on your local machine**
 
-Then it will automatically:
-1. Bootstrap CoreSrv (if confirmed)
-2. Bootstrap Pi #1 with Promtail agent
-3. Bootstrap Pi #2 in SPoG mode
-4. Provide validation checklist
+   ```bash
+   git clone https://github.com/yorgosroussakis/orion-sentinel-installer.git
+   cd orion-sentinel-installer
+   ```
 
-### Option 2: Manual Step-by-Step Deployment
+2. **Set up SSH key authentication** (if not already done)
+
+   ```bash
+   # Generate SSH key if you don't have one
+   ssh-keygen -t ed25519
+   
+   # Copy your SSH key to both Pis
+   ssh-copy-id pi@<pi1-ip-address>
+   ssh-copy-id pi@<pi2-ip-address>
+   ```
+
+3. **Run the orchestrator script**
+
+   ```bash
+   # Install on both Pis
+   ./scripts/orchestrate-install.sh --pi1 pi1.local --pi2 pi2.local
+   
+   # Or use IP addresses
+   ./scripts/orchestrate-install.sh --pi1 192.168.1.10 --pi2 192.168.1.11
+   
+   # Or install only DNS on Pi #1
+   ./scripts/orchestrate-install.sh --pi1 pi-dns.local --dns-only
+   
+   # Or install only NSM on Pi #2
+   ./scripts/orchestrate-install.sh --pi2 pi-nsm.local --nsm-only
+   ```
+
+4. **Configure your network**
+   - Set your router's DNS server to your Pi #1's IP address
+   - Connect Pi #2 to a network mirror/SPAN port (optional but recommended)
+
+### Option 2: Local Installation
+
+If you prefer to install directly on each Pi:
+
+#### Pi #1: DNS & Privacy Setup
 
 #### Step 1: Bootstrap CoreSrv
 
@@ -118,7 +145,7 @@ cd /opt/Orion-Sentinel-CoreSrv
 ./orionctl.sh up-observability
 ```
 
-#### Step 2: Bootstrap Pi #1 (DNS)
+#### Pi #2: Security & Monitoring Setup
 
 Run from your laptop or CoreSrv:
 
