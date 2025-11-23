@@ -118,14 +118,14 @@ if [ -f .env ]; then
     sed -i '/^LOCAL_OBSERVABILITY=/d' .env
     
     # Append new configuration
-    cat >> .env << 'EOFENV'
+    cat >> .env <<EOFENV
 $env_config
 EOFENV
     
     echo ".env file updated for SPoG mode"
 else
     # Create new .env file
-    cat > .env << 'EOFENV'
+    cat > .env <<EOFENV
 $env_config
 EOFENV
     echo ".env file created for SPoG mode"
