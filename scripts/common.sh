@@ -57,6 +57,11 @@ confirm() {
 
 # Run a command over SSH with nice logging
 # Usage: run_ssh <host> <command> [args...]
+# NOTE: This uses StrictHostKeyChecking=accept-new which automatically accepts
+# new host keys. For enhanced security in production environments, consider:
+# 1. Pre-populating known_hosts with ssh-keyscan
+# 2. Using StrictHostKeyChecking=ask to prompt users
+# 3. Verifying host keys through a separate secure channel
 run_ssh() {
     local host="$1"; shift
     echo "[SSH] $host: $*"
@@ -64,9 +69,18 @@ run_ssh() {
 }
 
 # Install Docker on a remote host (Debian/Raspbian/Ubuntu) in a simple way.
-# NOTE: For brevity this uses the get.docker.com script.
-# If you want the full "official repo" method, you can harden this further.
 # Usage: install_docker_remote <host>
+# 
+# SECURITY NOTE: This uses the get.docker.com convenience script for simplicity.
+# For production or security-critical environments, consider:
+# 1. Using the full Docker repository installation method (see common.sh install_docker())
+# 2. Verifying the script integrity before execution
+# 3. Running the script through a review process
+# 
+# The get.docker.com script is maintained by Docker and widely used, but piping
+# curl output directly to sh bypasses integrity verification. For more secure
+# installations, download and review the script first, or use the official
+# repository method as shown in the install_docker() function.
 install_docker_remote() {
     local host="$1"
 
@@ -76,6 +90,7 @@ install_docker_remote() {
     fi'
 
     echo "[INFO] Installing Docker on $host (using get.docker.com)..."
+    echo "[INFO] Note: Using convenience script. See function docs for security considerations."
     run_ssh "$host" 'curl -fsSL https://get.docker.com | sh'
     # Add current user on the Pi to docker group (usually "pi" or same ssh user)
     run_ssh "$host" 'sudo usermod -aG docker "$USER" || true'

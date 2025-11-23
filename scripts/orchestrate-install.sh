@@ -37,6 +37,26 @@ print_usage() {
     echo "      Set up SSH keys beforehand for passwordless access."
 }
 
+# Helper function to clone or update a repository on remote host
+# Usage: clone_or_update_remote <host> <repo_url> <target_dir> <branch>
+clone_or_update_remote() {
+    local host="$1"
+    local repo_url="$2"
+    local target_dir="$3"
+    local branch="$4"
+    
+    run_ssh "$host" "mkdir -p $ORION_BASE_DIR"
+    
+    # Use a here-document for better readability of the remote command
+    run_ssh "$host" bash <<EOF
+        if [ -d "$target_dir" ]; then
+            cd "$target_dir" && git pull
+        else
+            git clone --branch "$branch" "$repo_url" "$target_dir"
+        fi
+EOF
+}
+
 setup_dns_pi() {
     local host="$1"
     
@@ -48,12 +68,7 @@ setup_dns_pi() {
     
     # Clone the DNS repository on remote host
     print_info "Cloning DNS repository on $host..."
-    run_ssh "$host" "mkdir -p $ORION_BASE_DIR"
-    run_ssh "$host" "if [ -d $ORION_BASE_DIR/orion-sentinel-dns-ha ]; then
-        cd $ORION_BASE_DIR/orion-sentinel-dns-ha && git pull
-    else
-        git clone --branch $DNS_REPO_BRANCH $DNS_REPO_URL $ORION_BASE_DIR/orion-sentinel-dns-ha
-    fi"
+    clone_or_update_remote "$host" "$DNS_REPO_URL" "$ORION_BASE_DIR/orion-sentinel-dns-ha" "$DNS_REPO_BRANCH"
     
     # Run the DNS install script
     print_info "Running DNS installation script on $host..."
@@ -77,12 +92,7 @@ setup_nsm_pi() {
     
     # Clone the NSM repository on remote host
     print_info "Cloning NSM repository on $host..."
-    run_ssh "$host" "mkdir -p $ORION_BASE_DIR"
-    run_ssh "$host" "if [ -d $ORION_BASE_DIR/orion-sentinel-nsm-ai ]; then
-        cd $ORION_BASE_DIR/orion-sentinel-nsm-ai && git pull
-    else
-        git clone --branch $NSM_REPO_BRANCH $NSM_REPO_URL $ORION_BASE_DIR/orion-sentinel-nsm-ai
-    fi"
+    clone_or_update_remote "$host" "$NSM_REPO_URL" "$ORION_BASE_DIR/orion-sentinel-nsm-ai" "$NSM_REPO_BRANCH"
     
     # Run the NSM install script
     print_info "Running NSM installation script on $host..."
