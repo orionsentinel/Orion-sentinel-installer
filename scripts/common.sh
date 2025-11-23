@@ -103,6 +103,8 @@ install_docker() {
   sudo apt-get install -y ca-certificates curl gnupg lsb-release
 
   # Add Docker's official GPG key
+  # Note: This follows Docker's official installation instructions
+  # The GPG key is downloaded directly from Docker's official domain
   print_info "Adding Docker GPG key..."
   sudo install -m 0755 -d /etc/apt/keyrings
   curl -fsSL "https://download.docker.com/linux/${OS}/gpg" | sudo gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
@@ -166,6 +168,7 @@ sudo apt-get update
 sudo apt-get install -y ca-certificates curl gnupg lsb-release
 
 # Add Docker's official GPG key
+# Note: This follows Docker's official installation instructions
 echo "[INFO] Adding Docker GPG key..."
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/${OS}/gpg | sudo gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg

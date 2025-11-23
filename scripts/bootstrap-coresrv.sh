@@ -82,10 +82,26 @@ main() {
         if [ ! -f "env/.env.core" ] && [ -f "env/.env.core.example" ]; then
             print_info "Generating env/.env.core from example..."
             cp env/.env.core.example env/.env.core
-            print_warning "Please edit env/.env.core and fill in:"
-            print_warning "  - AUTHELIA_JWT_SECRET"
-            print_warning "  - AUTHELIA_SESSION_SECRET"
-            print_warning "  - AUTHELIA_STORAGE_ENCRYPTION_KEY"
+            
+            # Auto-generate Authelia secrets
+            print_info "Auto-generating Authelia secrets..."
+            AUTHELIA_JWT_SECRET=$(openssl rand -base64 32)
+            AUTHELIA_SESSION_SECRET=$(openssl rand -base64 32)
+            AUTHELIA_STORAGE_ENCRYPTION_KEY=$(openssl rand -base64 32)
+            
+            # Replace placeholders in .env.core if they exist
+            if grep -q "AUTHELIA_JWT_SECRET" env/.env.core; then
+                sed -i "s|^AUTHELIA_JWT_SECRET=.*|AUTHELIA_JWT_SECRET=${AUTHELIA_JWT_SECRET}|" env/.env.core
+                sed -i "s|^AUTHELIA_SESSION_SECRET=.*|AUTHELIA_SESSION_SECRET=${AUTHELIA_SESSION_SECRET}|" env/.env.core
+                sed -i "s|^AUTHELIA_STORAGE_ENCRYPTION_KEY=.*|AUTHELIA_STORAGE_ENCRYPTION_KEY=${AUTHELIA_STORAGE_ENCRYPTION_KEY}|" env/.env.core
+                print_info "✓ Authelia secrets auto-generated successfully"
+            else
+                print_warning "Authelia secret placeholders not found in .env.core"
+                print_info "Please manually add these secrets to env/.env.core:"
+                print_info "  AUTHELIA_JWT_SECRET=${AUTHELIA_JWT_SECRET}"
+                print_info "  AUTHELIA_SESSION_SECRET=${AUTHELIA_SESSION_SECRET}"
+                print_info "  AUTHELIA_STORAGE_ENCRYPTION_KEY=${AUTHELIA_STORAGE_ENCRYPTION_KEY}"
+            fi
         elif [ -f "env/.env.core" ]; then
             print_info "env/.env.core already exists"
         fi
@@ -94,8 +110,14 @@ main() {
         if [ ! -f "env/.env.monitoring" ] && [ -f "env/.env.monitoring.example" ]; then
             print_info "Generating env/.env.monitoring from example..."
             cp env/.env.monitoring.example env/.env.monitoring
-            print_warning "Please edit env/.env.monitoring and fill in:"
-            print_warning "  - MONITORING_ROOT (set to $ORION_DATA_ROOT/monitoring)"
+            
+            # Set MONITORING_ROOT automatically
+            if grep -q "MONITORING_ROOT" env/.env.monitoring; then
+                sed -i "s|^MONITORING_ROOT=.*|MONITORING_ROOT=${ORION_DATA_ROOT}/monitoring|" env/.env.monitoring
+                print_info "✓ MONITORING_ROOT set to ${ORION_DATA_ROOT}/monitoring"
+            fi
+            
+            print_warning "Please edit env/.env.monitoring and set:"
             print_warning "  - GRAFANA_ADMIN_USER"
             print_warning "  - GRAFANA_ADMIN_PASSWORD"
         elif [ -f "env/.env.monitoring" ]; then
