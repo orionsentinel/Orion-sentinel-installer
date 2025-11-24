@@ -10,9 +10,8 @@ This directory contains bootstrap and orchestration scripts for deploying Orion 
 | `bootstrap-coresrv.sh` | Set up CoreSrv (Dell server) | Three-node architecture |
 | `bootstrap-pi1-dns.sh` | Set up Pi #1 (DNS) | Both architectures |
 | `bootstrap-pi2-netsec.sh` | Set up Pi #2 (NetSec) in SPoG mode | Three-node architecture |
-| `bootstrap-pi2-nsm.sh` | Set up Pi #2 (NSM) standalone | Two-Pi architecture (legacy) |
+| `bootstrap-pi2-nsm.sh` | Set up Pi #2 (NSM) standalone | Two-Pi architecture (optional) |
 | `deploy-orion-sentinel.sh` | Full orchestration for all nodes | Three-node architecture |
-| `orchestrate-install.sh` | Orchestration for two Pis | Two-Pi architecture (legacy) |
 | `show-status.sh` | Display Docker container status | Any architecture |
 
 ## Architecture Overview
@@ -33,16 +32,17 @@ CoreSrv (Dell) + Pi #1 (DNS) + Pi #2 (NetSec in SPoG mode)
 ./deploy-orion-sentinel.sh --coresrv <ip> --pi-dns <host> --pi-netsec <host>
 ```
 
-### Two-Pi Architecture (Legacy)
+### Two-Pi Architecture (Optional)
 
 ```
 Pi #1 (DNS) + Pi #2 (NSM standalone)
 ```
 
+**Note**: This is an optional legacy deployment. For better performance, use the three-node architecture.
+
 **Use these scripts:**
 1. `bootstrap-pi1-dns.sh` - for Pi #1 (no CoreSrv)
 2. `bootstrap-pi2-nsm.sh` - for Pi #2
-3. Or `orchestrate-install.sh --pi1 <host> --pi2 <host>`
 
 ## Script Details
 
@@ -188,25 +188,12 @@ Pi #1 (DNS) + Pi #2 (NSM standalone)
 
 **Purpose**: Bootstrap Pi #2 in standalone mode (two-Pi architecture).
 
-**Note**: For new deployments, use `bootstrap-pi2-netsec.sh` with CoreSrv instead.
+**Note**: This is an optional legacy deployment. For new deployments, use `bootstrap-pi2-netsec.sh` with CoreSrv for better performance and centralized monitoring.
 
 **Usage**:
 ```bash
 # Run locally on Pi #2
 ./scripts/bootstrap-pi2-nsm.sh
-```
-
-#### orchestrate-install.sh
-
-**Purpose**: Orchestrate deployment for two-Pi architecture.
-
-**Note**: For new deployments with a server, use `deploy-orion-sentinel.sh` instead.
-
-**Usage**:
-```bash
-./scripts/orchestrate-install.sh --pi1 pi1.local --pi2 pi2.local
-./scripts/orchestrate-install.sh --pi1 pi1.local --dns-only
-./scripts/orchestrate-install.sh --pi2 pi2.local --nsm-only
 ```
 
 ### show-status.sh
