@@ -102,9 +102,11 @@ Choose your deployment architecture:
 
 📖 **Detailed Guide**: [Getting Started with Three-Node Architecture](docs/GETTING-STARTED-THREE-NODE.md)
 
-### Two-Pi Architecture (Standalone) - Simple Setup
+### Two-Pi Architecture (Standalone) - Optional Legacy Setup
 
 **Best for**: Users without a dedicated server, want self-contained Pis
+
+**Note**: This is a legacy deployment option. For better performance and centralized monitoring, use the three-node architecture above.
 
 1. **Clone this repository on your local machine**
 
@@ -120,10 +122,14 @@ Choose your deployment architecture:
    ssh-copy-id pi@<pi2-ip-address>
    ```
 
-3. **Run the orchestrator script**
+3. **Run the bootstrap scripts individually**
 
    ```bash
-   ./scripts/orchestrate-install.sh --pi1 pi1.local --pi2 pi2.local
+   # Bootstrap Pi #1 (DNS) in standalone mode
+   ./scripts/bootstrap-pi1-dns.sh --host pi1.local
+   
+   # Bootstrap Pi #2 (NSM) in standalone mode
+   ./scripts/bootstrap-pi2-nsm.sh
    ```
 
 4. **Configure your network**

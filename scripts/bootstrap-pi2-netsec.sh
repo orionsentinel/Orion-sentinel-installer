@@ -156,7 +156,7 @@ if [ -f "\${env_file}" ]; then
     echo "[INFO] SPoG configuration applied"
 else
     echo "[WARN] No .env file found - creating basic config..."
-    cat > "\${env_file}" <<'EOF'
+    cat > "\${env_file}" <<EOF
 LOKI_URL=http://${coresrv_ip}:3100
 LOCAL_OBSERVABILITY=false
 NSM_INTERFACE=eth0
