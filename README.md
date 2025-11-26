@@ -149,6 +149,7 @@ Choose your deployment architecture:
 - ✅ Loki for centralized log aggregation
 - ✅ Grafana for visualization
 - ✅ Prometheus for metrics collection (optional)
+- ✅ Homepage dashboard (optional) - Links to all services
 
 **Installation location**: `/opt/Orion-Sentinel-CoreSrv`
 
@@ -204,6 +205,9 @@ The bootstrap script will:
 
 ### Two-Pi Architecture (Standalone)
 - 📙 **[Getting Started with Two Pis](docs/getting-started-two-pi.md)** - Original two-Pi setup guide
+
+### Homepage Dashboard
+- 🏠 **[Homepage](homepage/)** - Lightweight dashboard with links to all services
 
 ### Component Repositories
 - [Orion-Sentinel-CoreSrv](https://github.com/yorgosroussakis/Orion-Sentinel-CoreSrv) - Central SPoG (Traefik, Loki, Grafana, Prometheus)
