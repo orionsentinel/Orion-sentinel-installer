@@ -111,13 +111,6 @@
                     url: "http://localhost/admin",
                     icon: "dns",
                     color: "#96060c"
-                },
-                {
-                    name: "Suricata",
-                    description: "Intrusion Detection",
-                    url: "#",
-                    icon: "security",
-                    color: "#ff6b35"
                 }
             ],
             additional: []
@@ -197,6 +190,13 @@
             </svg>`
         };
 
+        // Sanitize text to prevent XSS
+        function sanitizeText(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
         // Create a service card element
         function createServiceCard(service) {
             const card = document.createElement('a');
@@ -207,12 +207,14 @@
             card.style.setProperty('--service-color', service.color || '#4fd1c5');
             
             const iconSvg = icons[service.icon] || icons.link;
+            const safeName = sanitizeText(service.name);
+            const safeDescription = sanitizeText(service.description);
             
             card.innerHTML = `
                 <div class="service-icon">${iconSvg}</div>
                 <div class="service-info">
-                    <h3>${service.name}</h3>
-                    <p>${service.description}</p>
+                    <h3>${safeName}</h3>
+                    <p>${safeDescription}</p>
                 </div>
                 <div class="service-arrow">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
