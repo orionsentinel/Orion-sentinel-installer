@@ -1,0 +1,87 @@
+{
+    "core": [
+        {
+            "name": "Grafana",
+            "description": "Visualization & Dashboards",
+            "url": "http://grafana.local:3000",
+            "icon": "chart",
+            "color": "#f46800"
+        },
+        {
+            "name": "Traefik",
+            "description": "Reverse Proxy & SSL",
+            "url": "http://traefik.local:8080",
+            "icon": "network",
+            "color": "#24a1c1"
+        },
+        {
+            "name": "Authelia",
+            "description": "Authentication Portal",
+            "url": "http://auth.local:9091",
+            "icon": "shield",
+            "color": "#1a73e8"
+        }
+    ],
+    "monitoring": [
+        {
+            "name": "Prometheus",
+            "description": "Metrics Collection",
+            "url": "http://prometheus.local:9090",
+            "icon": "metrics",
+            "color": "#e6522c"
+        },
+        {
+            "name": "Loki",
+            "description": "Log Aggregation",
+            "url": "http://loki.local:3100",
+            "icon": "logs",
+            "color": "#f9b716"
+        }
+    ],
+    "network": [
+        {
+            "name": "Pi-hole",
+            "description": "DNS & Ad Blocking",
+            "url": "http://pihole.local/admin",
+            "icon": "dns",
+            "color": "#96060c"
+        },
+        {
+            "name": "Suricata Dashboard",
+            "description": "Intrusion Detection System",
+            "url": "http://security.local:8081",
+            "icon": "security",
+            "color": "#ff6b35"
+        }
+    ],
+    "additional": [
+        {
+            "name": "Nextcloud",
+            "description": "Personal Cloud Storage",
+            "url": "http://cloud.local",
+            "icon": "cloud",
+            "color": "#0082c9"
+        },
+        {
+            "name": "Home Assistant",
+            "description": "Smart Home Automation",
+            "url": "http://homeassistant.local:8123",
+            "icon": "home",
+            "color": "#41bdf5"
+        },
+        {
+            "name": "Jellyfin",
+            "description": "Media Server",
+            "url": "http://jellyfin.local:8096",
+            "icon": "media",
+            "color": "#00a4dc"
+        },
+        {
+            "name": "qBittorrent",
+            "description": "Download Manager",
+            "url": "http://downloads.local:8080",
+            "icon": "download",
+            "color": "#3498db"
+        }
+    ]
+}

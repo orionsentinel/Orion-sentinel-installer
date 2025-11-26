@@ -149,6 +149,7 @@ Choose your deployment architecture:
 - ✅ Loki for centralized log aggregation
 - ✅ Grafana for visualization
 - ✅ Prometheus for metrics collection (optional)
+- ✅ **Orion Sentinel Homepage** - Central dashboard with links to all services
 
 **Installation location**: `/opt/Orion-Sentinel-CoreSrv`
 
@@ -195,6 +196,52 @@ The bootstrap script will:
 
 **Default installation location**: `~/orion/orion-sentinel-nsm-ai`
 
+## Orion Sentinel Homepage
+
+The installer includes a central homepage dashboard for quick access to all your services.
+
+### Features
+- 🎨 Modern, responsive dark theme
+- ⚡ Fast, lightweight static site
+- 🔧 Easy JSON configuration
+- 🐳 Docker-ready with nginx
+
+### Quick Start
+
+```bash
+cd homepage
+docker compose up -d
+```
+
+### Customize Services
+
+Edit `homepage/html/services.json` to configure your service links:
+
+```json
+{
+    "core": [
+        {
+            "name": "Grafana",
+            "description": "Visualization & Dashboards",
+            "url": "http://192.168.1.50:3000",
+            "icon": "chart",
+            "color": "#f46800"
+        }
+    ],
+    "additional": [
+        {
+            "name": "Your Service",
+            "description": "Description here",
+            "url": "http://your-service.local",
+            "icon": "link",
+            "color": "#4fd1c5"
+        }
+    ]
+}
+```
+
+📖 See **[Homepage README](homepage/README.md)** for full documentation.
+
 ## Documentation
 
 ### Three-Node Architecture (CoreSrv + 2 Pis)
@@ -204,6 +251,9 @@ The bootstrap script will:
 
 ### Two-Pi Architecture (Standalone)
 - 📙 **[Getting Started with Two Pis](docs/getting-started-two-pi.md)** - Original two-Pi setup guide
+
+### Homepage
+- 🏠 **[Homepage README](homepage/README.md)** - Central dashboard setup and configuration
 
 ### Component Repositories
 - [Orion-Sentinel-CoreSrv](https://github.com/yorgosroussakis/Orion-Sentinel-CoreSrv) - Central SPoG (Traefik, Loki, Grafana, Prometheus)
