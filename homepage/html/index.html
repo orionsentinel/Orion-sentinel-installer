@@ -197,10 +197,15 @@
             return div.innerHTML;
         }
 
+        // Validate URL to prevent XSS
+        function isSafeUrl(url) {
+            return typeof url === 'string' && /^(https?:)\/\//i.test(url);
+        }
+
         // Create a service card element
         function createServiceCard(service) {
             const card = document.createElement('a');
-            card.href = service.url;
+            card.href = isSafeUrl(service.url) ? service.url : '#';
             card.className = 'service-card';
             card.target = '_blank';
             card.rel = 'noopener noreferrer';
