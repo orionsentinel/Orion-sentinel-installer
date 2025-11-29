@@ -252,8 +252,8 @@ Edit `homepage/html/services.json` to configure your service links:
 ### Two-Pi Architecture (Standalone)
 - 📙 **[Getting Started with Two Pis](docs/getting-started-two-pi.md)** - Original two-Pi setup guide
 
-### Homepage
-- 🏠 **[Homepage README](homepage/README.md)** - Central dashboard setup and configuration
+### Homepage Dashboard
+- 🏠 **[Homepage](homepage/)** - Lightweight dashboard with links to all services
 
 ### Component Repositories
 - [Orion-Sentinel-CoreSrv](https://github.com/yorgosroussakis/Orion-Sentinel-CoreSrv) - Central SPoG (Traefik, Loki, Grafana, Prometheus)

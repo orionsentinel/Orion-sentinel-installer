@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orion Sentinel - Dashboard</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="15" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="5" fill="currentColor"/>
+                    <line x1="50" y1="5" x2="50" y2="20" stroke="currentColor" stroke-width="2"/>
+                    <line x1="50" y1="80" x2="50" y2="95" stroke="currentColor" stroke-width="2"/>
+                    <line x1="5" y1="50" x2="20" y2="50" stroke="currentColor" stroke-width="2"/>
+                    <line x1="80" y1="50" x2="95" y2="50" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <div class="logo-text">
+                    <h1>Orion Sentinel</h1>
+                    <p class="tagline">Home Network Security Suite</p>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="service-group">
+                <h2>Core Services</h2>
+                <div class="services-grid">
+                    <a href="http://grafana.local" class="service-card" data-service="grafana">
+                        <div class="service-icon grafana">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M22.687 15.56c-.063-.313-.157-.469-.313-.625-.156-.156-.312-.156-.625-.156h-.156c-.313 0-.469.156-.625.156-.156.156-.313.313-.313.625 0 .313.157.469.313.625.156.156.312.156.625.156h.156c.313 0 .469-.156.625-.156.156-.156.313-.312.313-.625zm-1.407-2.188c.313 0 .625-.156.938-.156.313-.156.469-.313.625-.625.156-.313.156-.625.156-.938 0-.313-.156-.625-.313-.938-.156-.313-.469-.469-.781-.625-.313-.156-.625-.156-.938-.156-.313 0-.625.156-.938.313-.313.156-.469.469-.625.781 0 .313.156.625.313.938.156.313.469.469.781.625.156 0 .469.156.782.156v.625zm-3.126-3.75c.469 0 .938-.156 1.25-.469.313-.313.625-.625.782-1.094.156-.469.156-.938 0-1.406-.156-.469-.469-.782-.938-1.094-.469-.313-.938-.313-1.407-.313-.469 0-.938.156-1.25.469-.313.313-.625.625-.782 1.094-.156.469-.156.938 0 1.406.156.469.469.782.938 1.094.469.313.938.313 1.407.313zm-4.845-3.75c.625 0 1.094-.156 1.563-.469.469-.313.781-.781.938-1.25.156-.469.156-1.094-.157-1.563-.313-.469-.625-.781-1.094-1.094-.469-.313-1.094-.313-1.563-.156-.469.156-.938.469-1.25.938-.313.469-.469.938-.469 1.406 0 .469.156 1.094.469 1.406.313.313.781.625 1.25.781h.313zm-5.47-1.407c.625 0 1.25-.313 1.563-.781.313-.469.469-1.094.313-1.563-.156-.469-.469-.938-.938-1.25-.469-.313-1.094-.313-1.563-.156-.469.156-.938.469-1.25.938-.313.469-.313 1.094-.156 1.563.156.469.469.938.938 1.094.313.156.781.156 1.094.156zm-4.219 1.563c.625 0 1.094-.313 1.407-.781.313-.469.313-1.094.156-1.563-.156-.469-.469-.938-.938-1.094-.469-.156-1.094-.156-1.563.156-.469.313-.781.781-.938 1.25-.156.469 0 1.094.313 1.563.313.469.938.469 1.563.469zm-2.5 3.594c.469 0 .938-.156 1.25-.469.313-.313.625-.781.625-1.25 0-.469-.156-.938-.469-1.25-.313-.313-.781-.625-1.25-.625-.469 0-.938.156-1.25.469-.313.313-.625.781-.625 1.25 0 .469.156.938.469 1.25.313.313.781.625 1.25.625zm-.469 4.063c.313 0 .625-.156.938-.313.313-.156.469-.469.625-.781.156-.313.156-.625 0-.938-.156-.313-.313-.625-.625-.781-.313-.156-.625-.156-.938-.156-.313 0-.625.156-.938.313-.313.156-.469.469-.625.781-.156.313-.156.625 0 .938.156.313.313.625.625.781.313.156.625.156.938.156zm1.875 3.594c.156 0 .313 0 .469-.156.313-.156.469-.313.625-.625.156-.313.156-.625.156-.938 0-.313-.156-.625-.469-.781-.313-.156-.625-.313-.938-.313-.313 0-.625.156-.781.313-.156.156-.313.469-.469.781-.156.313-.156.625 0 .938.156.313.313.625.625.625.156.156.469.156.782.156zm3.438 2.656c.156 0 .313 0 .469-.156.469-.156.781-.469.938-.938.156-.469.156-.938-.156-1.406-.313-.469-.625-.625-1.094-.625-.469 0-.938.156-1.25.469-.313.313-.469.781-.469 1.25 0 .469.156.938.625 1.094.313.156.625.313.938.313zm4.375 1.407c.156 0 .469 0 .625-.156.469-.156.938-.469 1.094-.938.156-.469.156-1.094-.156-1.563-.313-.469-.781-.625-1.25-.625-.469 0-1.094.156-1.406.625-.313.469-.469.938-.313 1.406.156.469.469.938.938 1.094.156.156.313.156.469.156zm4.844.313c.156 0 .313 0 .469-.156.469-.156.938-.469 1.094-.938.156-.469.156-.938-.156-1.406-.313-.469-.781-.625-1.25-.625-.469 0-1.094.313-1.406.625-.313.313-.469.938-.313 1.406.156.469.469.938.938 1.094h.625zm4.219-.938c.156 0 .313 0 .469-.156.469-.156.781-.469.938-.938.156-.469.156-.938-.156-1.406-.313-.469-.625-.625-1.094-.625-.469 0-.938.156-1.25.625-.313.469-.469.938-.313 1.406.156.469.469.781.938.938.156.156.313.156.469.156z"/>
+                            </svg>
+                        </div>
+                        <div class="service-info">
+                            <h3>Grafana</h3>
+                            <p>Monitoring & Dashboards</p>
+                        </div>
+                        <span class="service-arrow">→</span>
+                    </a>
+
+                    <a href="http://traefik.local" class="service-card" data-service="traefik">
+                        <div class="service-icon traefik">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0L1.5 6v12L12 24l10.5-6V6L12 0zm0 2.5l7.5 4.3v8.4l-7.5 4.3-7.5-4.3V6.8L12 2.5z"/>
+                            </svg>
+                        </div>
+                        <div class="service-info">
+                            <h3>Traefik</h3>
+                            <p>Reverse Proxy</p>
+                        </div>
+                        <span class="service-arrow">→</span>
+                    </a>
+
+                    <a href="http://auth.local" class="service-card" data-service="authelia">
+                        <div class="service-icon authelia">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18l7 3.12v5.7c0 4.83-3.4 9.36-7 10.58V3.18z"/>
+                            </svg>
+                        </div>
+                        <div class="service-info">
+                            <h3>Authelia</h3>
+                            <p>Authentication</p>
+                        </div>
+                        <span class="service-arrow">→</span>
+                    </a>
+                </div>
+            </section>
+
+            <section class="service-group">
+                <h2>DNS & Privacy</h2>
+                <div class="services-grid">
+                    <a href="http://pi.hole/admin" class="service-card" data-service="pihole">
+                        <div class="service-icon pihole">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                            </svg>
+                        </div>
+                        <div class="service-info">
+                            <h3>Pi-hole</h3>
+                            <p>Ad Blocking & DNS</p>
+                        </div>
+                        <span class="service-arrow">→</span>
+                    </a>
+                </div>
+            </section>
+
+            <section class="service-group">
+                <h2>Network Security</h2>
+                <div class="services-grid">
+                    <a href="http://suricata.local" class="service-card" data-service="suricata">
+                        <div class="service-icon suricata">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
+                        <div class="service-info">
+                            <h3>Suricata</h3>
+                            <p>Intrusion Detection</p>
+                        </div>
+                        <span class="service-arrow">→</span>
+                    </a>
+
+                    <a href="http://loki.local:3100" class="service-card" data-service="loki">
+                        <div class="service-icon loki">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                            </svg>
+                        </div>
+                        <div class="service-info">
+                            <h3>Loki</h3>
+                            <p>Log Aggregation</p>
+                        </div>
+                        <span class="service-arrow">→</span>
+                    </a>
+
+                    <a href="http://prometheus.local:9090" class="service-card" data-service="prometheus">
+                        <div class="service-icon prometheus">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-4h2v2h-2v-2zm0-2h2V7h-2v7z"/>
+                            </svg>
+                        </div>
+                        <div class="service-info">
+                            <h3>Prometheus</h3>
+                            <p>Metrics Collection</p>
+                        </div>
+                        <span class="service-arrow">→</span>
+                    </a>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Orion Sentinel &copy; 2024 | <a href="https://github.com/yorgosroussakis/Orion-sentinel-installer">GitHub</a></p>
+        </footer>
+    </div>
+
+    <script src="assets/config.js"></script>
+    <script src="assets/app.js"></script>
+</body>
+</html>

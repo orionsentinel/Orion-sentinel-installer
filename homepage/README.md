@@ -19,169 +19,134 @@ cd homepage
 docker compose up -d
 ```
 
-Access the homepage at `http://localhost` (or your configured port).
+Access at: `http://localhost:8080`
 
-### Option 2: Standalone (No Docker)
+### Static Files (No Docker)
 
-Simply serve the `html/` directory with any web server:
+Simply serve the files with any web server:
 
 ```bash
-# Python
-cd html && python3 -m http.server 8080
+# Using Python
+python3 -m http.server 8080
 
-# Node.js (http-server)
-npx http-server html -p 8080
-
-# nginx/apache
-# Copy html/ contents to your web root
+# Using Node.js
+npx serve .
 ```
 
 ## Configuration
 
-### Customizing Services
+Edit `assets/config.js` to customize service URLs for your network:
 
-Edit `html/services.json` to add, remove, or modify the services displayed:
-
-```json
-{
-    "core": [
-        {
-            "name": "Grafana",
-            "description": "Visualization & Dashboards",
-            "url": "http://192.168.1.50:3000",
-            "icon": "chart",
-            "color": "#f46800"
-        }
-    ],
-    "monitoring": [...],
-    "network": [...],
-    "additional": [...]
-}
+```javascript
+window.ORION_CONFIG = {
+    services: {
+        grafana: {
+            name: "Grafana",
+            description: "Monitoring & Dashboards",
+            url: "http://192.168.1.50:3000",  // Your Grafana URL
+            icon: "grafana",
+            category: "core"
+        },
+        // ... more services
+    }
+};
 ```
 
-### Service Categories
+### Service URL Examples
 
-| Category | Purpose |
-|----------|---------|
-| `core` | Core infrastructure services (Grafana, Traefik, Authelia) |
-| `monitoring` | Monitoring and observability tools (Prometheus, Loki) |
-| `network` | Network services (Pi-hole, Suricata) |
-| `additional` | Any other services you want to add |
-
-### Available Icons
-
-| Icon | Description |
-|------|-------------|
-| `chart` | Dashboard/visualization services |
-| `network` | Network/proxy services |
-| `shield` | Security/authentication services |
-| `metrics` | Metrics/monitoring services |
-| `logs` | Logging services |
-| `dns` | DNS services |
-| `security` | IDS/security services |
-| `server` | Server management |
-| `cloud` | Cloud storage |
-| `database` | Database services |
-| `home` | Home automation |
-| `media` | Media servers |
-| `download` | Download managers |
-| `settings` | Configuration/settings |
-| `link` | Generic link (default) |
-
-### Environment Variables
-
-Set these in a `.env` file or pass them to docker compose:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `HOMEPAGE_PORT` | `80` | Port to expose the homepage |
-| `HOMEPAGE_DOMAIN` | `home.local` | Domain for Traefik routing |
-| `ORION_NETWORK` | `orion-network` | Docker network name |
+| Service | Default URL | Example Custom URL |
+|---------|-------------|-------------------|
+| Grafana | `http://grafana.local` | `http://192.168.1.50:3000` |
+| Pi-hole | `http://pi.hole/admin` | `http://192.168.1.10/admin` |
+| Traefik | `http://traefik.local` | `http://192.168.1.50:8080` |
+| Authelia | `http://auth.local` | `http://192.168.1.50:9091` |
 
 ## Integration with CoreSrv
 
-To deploy the homepage as part of your CoreSrv setup:
+The homepage can be deployed alongside your CoreSrv stack. To integrate with Traefik:
 
-1. **Copy the homepage directory to CoreSrv:**
-   ```bash
-   scp -r homepage/ user@coresrv:/opt/Orion-Sentinel-CoreSrv/
-   ```
+1. Add the Traefik labels in `docker-compose.yml`
+2. Configure your DNS or `/etc/hosts` to point `home.local` to CoreSrv
+3. Access via `http://home.local`
 
-2. **Configure services.json with your actual IPs:**
-   ```bash
-   ssh user@coresrv
-   cd /opt/Orion-Sentinel-CoreSrv/homepage
-   nano html/services.json
-   ```
+## Adding Custom Services
 
-3. **Start the homepage:**
-   ```bash
-   docker compose up -d
-   ```
+1. Edit `assets/config.js` to add your service:
 
-4. **Add DNS entry for easy access:**
-   - In Pi-hole: Add `home.local` → `<coresrv-ip>`
-   - Or in `/etc/hosts`: `192.168.1.50  home.local`
+```javascript
+myservice: {
+    name: "My Service",
+    description: "Custom service description",
+    url: "http://myservice.local:8000",
+    icon: "default",
+    category: "custom"
+}
+```
 
-## Theming
+2. Add the HTML in `index.html`:
 
-The homepage uses CSS custom properties for easy theming. Edit `html/styles.css` to customize:
+```html
+<a href="http://myservice.local:8000" class="service-card" data-service="myservice">
+    <div class="service-icon default">
+        <!-- SVG icon here -->
+    </div>
+    <div class="service-info">
+        <h3>My Service</h3>
+        <p>Custom service description</p>
+    </div>
+    <span class="service-arrow">→</span>
+</a>
+```
+
+3. Add icon styling in `assets/style.css`:
+
+```css
+.service-icon.default {
+    background: rgba(100, 100, 100, 0.15);
+    color: #888;
+}
+```
+
+## File Structure
+
+```
+homepage/
+├── index.html          # Main dashboard page
+├── docker-compose.yml  # Docker deployment
+├── README.md           # This file
+├── assets/
+│   ├── style.css       # Dashboard styling
+│   ├── config.js       # Service configuration
+│   ├── app.js          # Dashboard logic
+│   └── favicon.svg     # Browser icon
+└── config/
+    └── nginx.conf      # Nginx configuration
+```
+
+## Customization
+
+### Colors
+
+Edit the CSS variables in `assets/style.css`:
 
 ```css
 :root {
-    --bg-primary: #0f1419;      /* Main background */
-    --bg-card: #232f3e;         /* Card background */
-    --text-primary: #e5e7eb;    /* Main text color */
-    --accent-primary: #4fd1c5;  /* Accent color */
+    --bg-primary: #0f172a;      /* Main background */
+    --accent-primary: #3b82f6;  /* Primary accent color */
     /* ... more variables */
 }
 ```
 
-The homepage automatically respects the user's system color scheme preference (dark/light mode).
+### Service Icons
 
-## Screenshots
+Each service has a unique color defined in the CSS:
 
-The homepage provides a clean, organized view of all your services:
-
-- **Core Services**: Central infrastructure like Grafana and Traefik
-- **Monitoring**: Prometheus, Loki, and other observability tools
-- **Network**: Pi-hole, Suricata, and network management
-- **Additional**: Any other services in your homelab stack
-
-## Troubleshooting
-
-### Services not loading
-
-1. Check that `services.json` is valid JSON:
-   ```bash
-   cat html/services.json | jq .
-   ```
-
-2. Check browser console for JavaScript errors
-
-3. Ensure the file is being served with correct MIME type
-
-### Container won't start
-
-1. Check if port 80 is already in use:
-   ```bash
-   sudo lsof -i :80
-   ```
-
-2. Use a different port:
-   ```bash
-   HOMEPAGE_PORT=8888 docker compose up -d
-   ```
-
-### Traefik integration not working
-
-1. Ensure the `orion-network` exists:
-   ```bash
-   docker network create orion-network
-   ```
-
-2. Check Traefik labels are correct in `docker-compose.yml`
+```css
+--color-grafana: #f46800;
+--color-pihole: #96060c;
+/* ... */
+```
 
 ## License
 
-MIT License - see the main repository LICENSE file.
+MIT License - Part of the Orion Sentinel project.
