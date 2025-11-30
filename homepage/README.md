@@ -1,20 +1,18 @@
 # Orion Sentinel Homepage
 
-A lightweight, visually appealing dashboard for your Orion Sentinel home network security suite.
-
-![Dashboard Preview](../docs/images/homepage-preview.png)
+A modern, customizable dashboard for accessing all your homelab services from a central location.
 
 ## Features
 
-- 🎨 **Clean, Modern Design** - Dark theme with subtle animations
-- ⚡ **Lightweight** - Pure HTML/CSS/JS, no frameworks required
-- 📱 **Responsive** - Works on desktop, tablet, and mobile
-- 🔧 **Easy Configuration** - Edit a single config file to customize
-- 🐳 **Docker Ready** - Deploy with a single command
+- 🎨 Clean, modern dark theme (with light mode support)
+- 📱 Fully responsive design
+- ⚡ Fast, lightweight (static HTML/CSS/JS)
+- 🔧 Easy to configure via JSON
+- 🐳 Docker-ready with nginx
 
 ## Quick Start
 
-### Using Docker Compose (Recommended)
+### Option 1: Docker Compose (Recommended)
 
 ```bash
 cd homepage
